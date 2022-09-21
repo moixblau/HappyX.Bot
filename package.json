@@ -2,9 +2,9 @@
   "name": "bolt-js-slack-app",
   "version": "0.0.1",
   "description": "A simple Slack app built using Bolt for JavaScript",
-  "main": "app.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node src/app.js"
   },
   "dependencies": {
     "@slack/bolt": "^3.12.1",
