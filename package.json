@@ -1,0 +1,26 @@
+{
+  "name": "bolt-js-slack-app",
+  "version": "0.0.1",
+  "description": "A simple Slack app built using Bolt for JavaScript",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.12.1",
+    "node-cron": "^3.0.2",
+    "axios": "^0.27.2"
+  },
+  "engines": {
+    "node": "14.x"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/remix/slack-bolt-track-helloworld"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "slack",
+    "bolt"
+  ]
+}
