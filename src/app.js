@@ -12,6 +12,7 @@ const api = {
   token: process.env.API_TOKEN,
 };
 
+
 axios.defaults.baseURL = api.host;
 axios.defaults.headers.common["Authorization"] = api.token;
 
