@@ -16,8 +16,7 @@ axios.defaults.baseURL = api.host;
 axios.defaults.headers.common["Authorization"] = api.token;
 
 // Schedule mood selection message
-//const job = nodeCron.schedule("0 13 * * 1-5", function jobYouNeedToExecute() {
-const job = nodeCron.schedule("* * * * *", function jobYouNeedToExecute() {
+const job = nodeCron.schedule("0 13 * * 1-5", function jobYouNeedToExecute() {
   axios
     .get("/User/GetUsers")
     .then((res) => {
