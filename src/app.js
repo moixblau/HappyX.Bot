@@ -17,15 +17,12 @@ axios.defaults.baseURL = api.host;
 axios.defaults.headers.common["Authorization"] = api.token;
 
 // Schedule mood selection message
-//const job = nodeCron.schedule("0 13 * * 1-5", function jobYouNeedToExecute() {
 const job = nodeCron.schedule("0 13 * * 1-5", function jobYouNeedToExecute() {
-  var users;
-
   axios
     .get("/User/GetUsers")
     .then((res) => {
-      console.log(`Status: ${res.status}`);
-      users = res.data;
+      console.log(`Mood Scheduled send - Status: ${res.status}`);
+      var users = res.data;
       users.forEach((user) => {
         app.client.chat
           .postMessage({
@@ -95,12 +92,10 @@ const job = nodeCron.schedule("0 13 * * 1-5", function jobYouNeedToExecute() {
     .catch((err) => {
       console.error(err);
     });
-
-  console.log(new Date().toLocaleString());
 });
 
 // Slash commands
-app.command("/joinx", async ({ body, command, ack, say }) => {
+app.command("/joinx", async ({ body, ack, say }) => {
   await ack();
 
   var slack_id = body["user_id"];
@@ -111,6 +106,7 @@ app.command("/joinx", async ({ body, command, ack, say }) => {
   axios
     .post("/User/AddUser", body)
     .then((res) => {
+      console.log(`User ${slack_name} joined - Status: ${res.status}!`);
       say("Welcome! 👋🤖");
     })
     .catch((err) => {
@@ -119,16 +115,18 @@ app.command("/joinx", async ({ body, command, ack, say }) => {
     });
 });
 
-app.command("/leavex", async ({ body, command, ack, say }) => {
+app.command("/leavex", async ({ body, ack, say }) => {
   await ack();
 
   var slack_id = body["user_id"];
+  var slack_name = body["user_name"];
   var body = { slackId: slack_id };
 
   axios
-    .delete("/User/DeleteUser")
+    .delete("/User/DeleteUser", {data: body}) // Don't work if I use body as parameter, you need to use data json.
     .then((res) => {
-      say("Good Bye! 👋");
+      console.log(`User ${slack_name} leave - Status: ${res.status}!`);
+      say("Good bye! 👋🤖");
     })
     .catch((err) => {
       say("Something goes wrong, try it later! 😖");
@@ -149,14 +147,14 @@ async function responseMood(res, ack, say, mood) {
 
   // Save user record
   var slack_id = res["user"]["id"];
+  var slack_name =  res["user"]["name"];
   var body = { slackId: slack_id, moodName: mood };
-
-  console.log(body);
 
   axios
     .post("/Record/AddRecord", body)
     .then((res) => {
       say("Thanks! 🤘");
+      console.log(`${slack_name} today's mood is ${mood} - Status: ${res.status}!`)
     })
     .catch((err) => {
       console.error(err);
@@ -182,7 +180,7 @@ app.action("mood-set-sad", async ({ body, ack, say }) => {
 
 // Start server
 (async () => {
-  await app.start(process.env.PORT || 3000);
+  await app.start(process.env.PORT || 80);
   job.start();
   console.log("🤖 Bot is running!");
 })();
