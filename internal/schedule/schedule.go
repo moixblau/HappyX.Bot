@@ -52,3 +52,15 @@ func ReportDue(s Settings, now time.Time) (from, to string, due bool) {
 	}
 	return start.Format(DateLayout), today.AddDate(0, 0, -1).Format(DateLayout), true
 }
+
+// CurrentPeriod is the period in progress, from its first day (Monday, or the 1st of the
+// month) to today, in the guild's timezone.
+func CurrentPeriod(s Settings, now time.Time) (from, to string) {
+	local := now.In(s.location())
+	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
+	start := today.AddDate(0, 0, -((int(today.Weekday()) + 6) % 7))
+	if s.ReportFrequency == "monthly" {
+		start = time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+	return start.Format(DateLayout), today.Format(DateLayout)
+}
