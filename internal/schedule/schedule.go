@@ -12,6 +12,22 @@ type Settings struct {
 	Timezone        string
 	SurveyHour      int
 	ReportFrequency string // "weekly" or "monthly"
+	// WorkingDays are the ISO days (1 is Monday, 7 Sunday) the survey goes out. Empty means
+	// Monday to Friday, for an API that doesn't send them yet.
+	WorkingDays []int
+}
+
+// Works reports whether day is one of the guild's working days.
+func (s Settings) Works(day time.Weekday) bool {
+	if len(s.WorkingDays) == 0 {
+		return day >= time.Monday && day <= time.Friday
+	}
+	for _, n := range s.WorkingDays {
+		if time.Weekday(n%7) == day {
+			return true
+		}
+	}
+	return false
 }
 
 func (s Settings) location() *time.Location {
@@ -22,11 +38,11 @@ func (s Settings) location() *time.Location {
 	return loc
 }
 
-// SurveyDue reports whether today's survey should go out: it is due from the survey hour until
-// the end of the guild's local day. day is the guild's local date.
+// SurveyDue reports whether today's survey should go out: on working days it is due from the
+// survey hour until the end of the guild's local day. day is the guild's local date.
 func SurveyDue(s Settings, now time.Time) (day string, due bool) {
 	local := now.In(s.location())
-	return local.Format(DateLayout), local.Hour() >= s.SurveyHour
+	return local.Format(DateLayout), s.Works(local.Weekday()) && local.Hour() >= s.SurveyHour
 }
 
 // ReportDue reports whether the report for the last complete period should go out. It is due

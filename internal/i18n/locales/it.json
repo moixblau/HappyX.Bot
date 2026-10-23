@@ -35,7 +35,7 @@
   "report.image_period": "Dal {from_day} {from_month} al {to_day} {to_month} {year}",
   "date.months": "gen,feb,mar,apr,mag,giu,lug,ago,set,ott,nov,dic",
   "date.weekdays": "dom,lun,mar,mer,gio,ven,sab",
-  "status.text": "**Sondaggio:** ogni giorno alle {hour}:00 ({timezone})\n**Report:** {frequency}, inviato a {admin}\n**Anonimo:** {anonymous}\n**Lingua:** {language}\n**Partecipanti:** {participants}\n**Tu:** {you}",
+  "status.text": "**Sondaggio:** {days} alle {hour}:00 ({timezone})\n**Report:** {frequency}, inviato a {admin}\n**Anonimo:** {anonymous}\n**Lingua:** {language}\n**Partecipanti:** {participants}\n**Tu:** {you}",
   "status.receiving": "ricevi il sondaggio",
   "status.paused": "in pausa",
   "freq.weekly": "settimanale",
@@ -47,7 +47,7 @@
   "pause.done": "Fatto, non riceverai più il sondaggio di questo server. Usa {resume_cmd} per tornare.",
   "resume.done": "Perfetto! Riceverai di nuovo il sondaggio giornaliero in messaggio privato.",
   "stop.done": "Fatto, non riceverai più il sondaggio di questo server. Se cambi idea, usa {resume_cmd} nel server.",
-  "config.saved": "Impostazioni salvate: sondaggio alle {hour}:00 ({timezone}), report {frequency} inviato a {admin}, anonimo: {anonymous}, lingua: {language}.",
+  "config.saved": "Impostazioni salvate: sondaggio {days} alle {hour}:00 ({timezone}), report {frequency} inviato a {admin}, anonimo: {anonymous}, lingua: {language}.",
   "config.now_public": "Da ora l'amministratore può vedere chi risponde. Le risposte date mentre il server era anonimo restano anonime.",
   "admin.only": "Solo l'admin di HappyX ({admin}) può farlo.",
   "error.generic": "Qualcosa è andato storto, riprova più tardi. 😖",
@@ -100,5 +100,12 @@
   "opt.message.name": "messaggio",
   "opt.message.description": "Per cosa lo ringrazi",
   "opt.kudos_channel.name": "canale_kudos",
-  "opt.kudos_channel.description": "Canale dove vengono pubblicati i kudos"
+  "opt.kudos_channel.description": "Canale dove vengono pubblicati i kudos",
+  "days.every": "ogni giorno",
+  "days.mon_fri": "Da lunedì a venerdì",
+  "days.mon_sat": "Da lunedì a sabato",
+  "days.all": "Ogni giorno",
+  "days.sun_thu": "Da domenica a giovedì",
+  "opt.working_days.name": "giorni_lavorativi",
+  "opt.working_days.description": "Giorni in cui parte il sondaggio (sul web puoi sceglierne altri)"
 }

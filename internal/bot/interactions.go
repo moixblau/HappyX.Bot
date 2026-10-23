@@ -33,6 +33,7 @@ const (
 	optUser      = "user"
 	optMessage   = "message"
 	optKudosChan = "kudos_channel"
+	optWorkDays  = "working_days"
 
 	periodLast    = "last"
 	periodCurrent = "current"
@@ -84,6 +85,12 @@ func commands() []*discordgo.ApplicationCommand {
 	kudosMessage.Required, kudosMessage.MinLength, kudosMessage.MaxLength = true, &one, kudosMaxLength
 	kudosChannel := opt(discordgo.ApplicationCommandOptionChannel, optKudosChan)
 	kudosChannel.ChannelTypes = []discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}
+	workingDays := opt(discordgo.ApplicationCommandOptionString, optWorkDays)
+	for _, p := range workingDayPresets {
+		workingDays.Choices = append(workingDays.Choices, &discordgo.ApplicationCommandOptionChoice{
+			Name: en.T("days." + p.key), NameLocalizations: *localized("days." + p.key), Value: p.key,
+		})
+	}
 	language := opt(discordgo.ApplicationCommandOptionString, optLanguage)
 	for _, code := range i18n.Codes() {
 		language.Choices = append(language.Choices, &discordgo.ApplicationCommandOptionChoice{
@@ -110,6 +117,7 @@ func commands() []*discordgo.ApplicationCommand {
 				language,
 				opt(discordgo.ApplicationCommandOptionUser, optAdmin),
 				kudosChannel,
+				workingDays,
 			),
 		},
 	}}
@@ -285,7 +293,7 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		}
 	}
 	b.ephemeral(i, l.T("status.text",
-		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
+		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name,
 		"participants", len(members), "you", you)+"\n"+kudosChannelLine(l, g))
@@ -319,6 +327,8 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 		case optKudosChan:
 			v := o.ChannelValue(nil).ID
 			p.KudosChannelID = &v
+		case optWorkDays:
+			p.WorkingDays = presetDays(o.StringValue())
 		}
 	}
 	g, err := b.api.UpdateGuild(ctx, i.GuildID, p)
@@ -336,7 +346,7 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 // earlier answers stay anonymous.
 func configSaved(l *i18n.Locale, g api.Guild, p api.GuildPatch) string {
 	s := l.T("config.saved",
-		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
+		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + "\n" + kudosChannelLine(l, g)
 	if p.Anonymous != nil && !*p.Anonymous {
