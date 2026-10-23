@@ -1,0 +1,73 @@
+package api
+
+import (
+	"context"
+	"errors"
+	"os"
+	"testing"
+	"time"
+)
+
+// Contract test against a running HappyX.Api. Set HAPPYX_API_URL and HAPPYX_API_KEY to run it.
+// It writes to the guild 100000000000000077, so don't point it at production.
+func TestClientAgainstAPI(t *testing.T) {
+	url, key := os.Getenv("HAPPYX_API_URL"), os.Getenv("HAPPYX_API_KEY")
+	if url == "" || key == "" {
+		t.Skip("HAPPYX_API_URL / HAPPYX_API_KEY not set")
+	}
+	ctx := context.Background()
+	c := New(url, key)
+	const g, admin, u = "100000000000000077", "300000000000000077", "200000000000000077"
+	today := time.Now().In(mustLoc(t, "Europe/Madrid")).Format("2006-01-02")
+
+	if _, err := c.RegisterGuild(ctx, g, "Contract test", admin); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.UpsertMember(ctx, g, u, "tester", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.RecordMood(ctx, g, u, today, 4, "hola"); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.RecordMood(ctx, g, "200000000000000078", today, 4, ""); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("non-member answer: want ErrForbidden, got %v", err)
+	}
+	r, err := c.Report(ctx, g, today, today)
+	if err != nil || r.Responses < 1 {
+		t.Fatalf("report: %+v %v", r, err)
+	}
+
+	period := "2001-01-01" // fixed so a rerun sees it already claimed
+	first, err := c.ClaimDispatch(ctx, g, "survey", period)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := c.ClaimDispatch(ctx, g, "survey", period)
+	if err != nil || second {
+		t.Fatalf("second claim should be false without error: %v %v (first %v)", second, err, first)
+	}
+
+	if err := c.RemoveMember(ctx, g, u); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.UpsertMember(ctx, g, u, "tester", nil); err != nil {
+		t.Fatal(err)
+	}
+	ms, err := c.Members(ctx, g)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range ms {
+		if m.DiscordID == u {
+			t.Fatal("sync re-subscribed a member who opted out")
+		}
+	}
+}
+
+func mustLoc(t *testing.T, name string) *time.Location {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return loc
+}
