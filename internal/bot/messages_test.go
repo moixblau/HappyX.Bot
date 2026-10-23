@@ -3,6 +3,7 @@ package bot
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -100,9 +101,44 @@ func TestKudosCommand(t *testing.T) {
 	if kudos.Options[0].Type != discordgo.ApplicationCommandOptionUser || kudos.Options[1].MaxLength != kudosMaxLength {
 		t.Fatalf("kudos options: %+v %+v", kudos.Options[0], kudos.Options[1])
 	}
-	last := config.Options[len(config.Options)-1]
-	if last.Name != optKudosChan || last.Type != discordgo.ApplicationCommandOptionChannel {
-		t.Fatalf("/happyx config should take a kudos channel: %+v", last)
+	byName := map[string]*discordgo.ApplicationCommandOption{}
+	for _, o := range config.Options {
+		byName[o.Name] = o
+	}
+	if o := byName[optKudosChan]; o == nil || o.Type != discordgo.ApplicationCommandOptionChannel {
+		t.Fatalf("/happyx config should take a kudos channel: %+v", o)
+	}
+	if o := byName[optGames]; o == nil || o.Type != discordgo.ApplicationCommandOptionBoolean {
+		t.Fatalf("/happyx config should turn games on and off: %+v", o)
+	}
+}
+
+func TestGameIDs(t *testing.T) {
+	id := gameID{Action: gameAnswer, GuildID: "100000000000000001", Week: "2026-10-19"}
+	if got, ok := parseGameID(id.String()); !ok || got != id {
+		t.Fatalf("round trip: %+v %v", got, ok)
+	}
+	for _, bad := range []string{"hx:mood:1:2026-10-19:3", "hxg:other:1:2026-10-19", "hxg:answer:1:monday", "hxg:answer:1"} {
+		if _, ok := parseGameID(bad); ok {
+			t.Errorf("%q should not parse", bad)
+		}
+	}
+	// A survey ID is never taken for a game one, and vice versa.
+	if _, ok := parseSurveyID(id.String()); ok {
+		t.Error("game ID parsed as a survey ID")
+	}
+}
+
+func TestGameQuestionRotates(t *testing.T) {
+	l := i18n.Get("es")
+	seen := map[string]bool{}
+	week, _ := time.Parse("2006-01-02", "2026-10-19")
+	for i := 0; i < 20; i++ {
+		q := gameQuestion(l, week.AddDate(0, 0, 7*i).Format("2006-01-02"))
+		if strings.HasPrefix(q, "game.q.") || seen[q] {
+			t.Fatalf("week %d: %q missing or repeated", i, q)
+		}
+		seen[q] = true
 	}
 }
 

@@ -19,6 +19,13 @@ report. One bot serves any number of servers; their data is kept apart by
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
   since they are public anyway.
+- **«Who's who?» game** (off by default, `/happyx config games:True` or the web settings): on
+  Monday, from the survey hour, every member taking part gets an icebreaker question by DM and
+  answers it in a modal until Wednesday (they can also answer on the web). On Thursday they get a
+  link to guess on the web who wrote each answer, if at least 3 answered; on Monday the web shows
+  who was who and the ranking. The DM tells members their name comes out at the end of the week.
+  Questions rotate weekly from `game.q.*` in the locales. Turned on mid-week, the game starts that
+  same week until Wednesday.
 - The API records each survey and report it has sent, so restarts never send twice.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 - **Languages**: each server has a language (English by default, set with `/happyx config language`).
@@ -32,7 +39,7 @@ report. One bot serves any number of servers; their data is kept apart by
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
 | `/happyx kudos` | everyone | `user`, `message` (≤300): publicly thank a teammate |
-| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel` |
+| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel`, `games` |
 | `/happyx report` | admin | see the last completed period's report now, or the one in progress with `period:current` |
 
 Discord shows these names translated for users whose client is in a supported language.
@@ -79,6 +86,7 @@ All from environment variables (see `.env.example`):
 | `DISCORD_TOKEN` | Bot token |
 | `API_URL` | HappyX.Api base URL, e.g. `http://api:8080` inside docker compose |
 | `API_KEY` | API key; put its SHA-256 hash in the API's `API_KEY_HASHES` |
+| `WEB_URL` | Optional. The dashboard's public URL, e.g. `https://happyx.example.com`. The game links there to guess; without it there is no Thursday reminder |
 
 ## Development
 
