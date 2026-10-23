@@ -33,7 +33,7 @@
   "report.image_period": "Del {from_day} {from_month} al {to_day} {to_month} de {year}",
   "date.months": "gen,febr,març,abr,maig,juny,jul,ag,set,oct,nov,des",
   "date.weekdays": "dg,dl,dt,dc,dj,dv,ds",
-  "status.text": "**Enquesta:** cada dia a les {hour}:00 ({timezone})\n**Report:** {frequency}, per a {admin}\n**Anònim:** {anonymous}\n**Idioma:** {language}\n**Participants:** {participants}\n**Tu:** {you}",
+  "status.text": "**Enquesta:** {days} a les {hour}:00 ({timezone})\n**Report:** {frequency}, per a {admin}\n**Anònim:** {anonymous}\n**Idioma:** {language}\n**Participants:** {participants}\n**Tu:** {you}",
   "status.receiving": "reps l'enquesta",
   "status.paused": "en pausa",
   "freq.weekly": "setmanal",
@@ -45,7 +45,7 @@
   "pause.done": "Fet, ja no rebràs l'enquesta d'aquest servidor. Fes servir {resume_cmd} per tornar.",
   "resume.done": "Perfecte! Tornaràs a rebre l'enquesta diària per missatge privat.",
   "stop.done": "Fet, ja no rebràs l'enquesta d'aquest servidor. Si canvies d'idea, fes servir {resume_cmd} al servidor.",
-  "config.saved": "Configuració desada: enquesta a les {hour}:00 ({timezone}), report {frequency} per a {admin}, anònim: {anonymous}, idioma: {language}.",
+  "config.saved": "Configuració desada: enquesta {days} a les {hour}:00 ({timezone}), report {frequency} per a {admin}, anònim: {anonymous}, idioma: {language}.",
   "config.now_public": "A partir d'ara l'administrador pot veure qui respon. Les respostes donades mentre el servidor era anònim continuen sent anònimes.",
   "admin.only": "Només l'administrador de HappyX ({admin}) pot fer això.",
   "error.generic": "Alguna cosa ha fallat, torna-ho a provar més tard. 😖",
@@ -98,5 +98,12 @@
   "opt.message.name": "missatge",
   "opt.message.description": "Per què li dones les gràcies",
   "opt.kudos_channel.name": "canal_kudos",
-  "opt.kudos_channel.description": "Canal on es publiquen els kudos"
+  "opt.kudos_channel.description": "Canal on es publiquen els kudos",
+  "days.every": "cada dia",
+  "days.mon_fri": "De dilluns a divendres",
+  "days.mon_sat": "De dilluns a dissabte",
+  "days.all": "Cada dia",
+  "days.sun_thu": "De diumenge a dijous",
+  "opt.working_days.name": "dies_laborables",
+  "opt.working_days.description": "Dies en què s'envia l'enquesta (al web pots triar-ne qualsevol)"
 }
