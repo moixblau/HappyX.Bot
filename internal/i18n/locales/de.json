@@ -35,7 +35,7 @@
   "report.image_period": "{from_day}. {from_month} – {to_day}. {to_month} {year}",
   "date.months": "Jan,Feb,Mär,Apr,Mai,Jun,Jul,Aug,Sep,Okt,Nov,Dez",
   "date.weekdays": "So,Mo,Di,Mi,Do,Fr,Sa",
-  "status.text": "**Umfrage:** täglich um {hour}:00 ({timezone})\n**Bericht:** {frequency}, an {admin}\n**Anonym:** {anonymous}\n**Sprache:** {language}\n**Teilnehmende:** {participants}\n**Du:** {you}",
+  "status.text": "**Umfrage:** {days} um {hour}:00 ({timezone})\n**Bericht:** {frequency}, an {admin}\n**Anonym:** {anonymous}\n**Sprache:** {language}\n**Teilnehmende:** {participants}\n**Du:** {you}",
   "status.receiving": "du bekommst die Umfrage",
   "status.paused": "pausiert",
   "freq.weekly": "wöchentlich",
@@ -47,7 +47,7 @@
   "pause.done": "Erledigt, du bekommst die Umfrage dieses Servers nicht mehr. Mit {resume_cmd} bist du wieder dabei.",
   "resume.done": "Super! Du bekommst die tägliche Umfrage wieder per Direktnachricht.",
   "stop.done": "Erledigt, du bekommst die Umfrage dieses Servers nicht mehr. Wenn du es dir anders überlegst, nutze {resume_cmd} auf dem Server.",
-  "config.saved": "Einstellungen gespeichert: Umfrage um {hour}:00 ({timezone}), Bericht {frequency} an {admin}, anonym: {anonymous}, Sprache: {language}.",
+  "config.saved": "Einstellungen gespeichert: Umfrage {days} um {hour}:00 ({timezone}), Bericht {frequency} an {admin}, anonym: {anonymous}, Sprache: {language}.",
   "config.now_public": "Ab jetzt sieht der Admin, wer antwortet. Antworten, die gegeben wurden, als der Server anonym war, bleiben anonym.",
   "admin.only": "Nur der HappyX-Admin ({admin}) kann das tun.",
   "error.generic": "Etwas ist schiefgelaufen, bitte versuche es später noch einmal. 😖",
@@ -137,5 +137,12 @@
   "game.q.17": "Welche Kleinigkeit macht deinen Tag immer besser?",
   "game.q.18": "Wenn du überall leben könntest, wo wäre es?",
   "game.q.19": "Worüber hast du zuletzt laut gelacht?",
-  "game.q.20": "Welche unpopuläre Meinung vertrittst du?"
+  "game.q.20": "Welche unpopuläre Meinung vertrittst du?",
+  "days.every": "täglich",
+  "days.mon_fri": "Montag bis Freitag",
+  "days.mon_sat": "Montag bis Samstag",
+  "days.all": "Jeden Tag",
+  "days.sun_thu": "Sonntag bis Donnerstag",
+  "opt.working_days.name": "arbeitstage",
+  "opt.working_days.description": "Tage, an denen die Umfrage kommt (im Web beliebige Tage wählbar)"
 }

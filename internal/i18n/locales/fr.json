@@ -35,7 +35,7 @@
   "report.image_period": "Du {from_day} {from_month} au {to_day} {to_month} {year}",
   "date.months": "janv,févr,mars,avr,mai,juin,juil,août,sept,oct,nov,déc",
   "date.weekdays": "dim,lun,mar,mer,jeu,ven,sam",
-  "status.text": "**Sondage :** tous les jours à {hour}:00 ({timezone})\n**Rapport :** {frequency}, envoyé à {admin}\n**Anonyme :** {anonymous}\n**Langue :** {language}\n**Participants :** {participants}\n**Toi :** {you}",
+  "status.text": "**Sondage :** {days} à {hour}:00 ({timezone})\n**Rapport :** {frequency}, envoyé à {admin}\n**Anonyme :** {anonymous}\n**Langue :** {language}\n**Participants :** {participants}\n**Toi :** {you}",
   "status.receiving": "tu reçois le sondage",
   "status.paused": "en pause",
   "freq.weekly": "hebdomadaire",
@@ -47,7 +47,7 @@
   "pause.done": "C'est fait, tu ne recevras plus le sondage de ce serveur. Utilise {resume_cmd} pour revenir.",
   "resume.done": "Parfait ! Tu recevras à nouveau le sondage quotidien en message privé.",
   "stop.done": "C'est fait, tu ne recevras plus le sondage de ce serveur. Si tu changes d'avis, utilise {resume_cmd} sur le serveur.",
-  "config.saved": "Paramètres enregistrés : sondage à {hour}:00 ({timezone}), rapport {frequency} envoyé à {admin}, anonyme : {anonymous}, langue : {language}.",
+  "config.saved": "Paramètres enregistrés : sondage {days} à {hour}:00 ({timezone}), rapport {frequency} envoyé à {admin}, anonyme : {anonymous}, langue : {language}.",
   "config.now_public": "Désormais, l'admin peut voir qui répond. Les réponses données quand le serveur était anonyme restent anonymes.",
   "admin.only": "Seul l'admin HappyX ({admin}) peut faire ça.",
   "error.generic": "Une erreur s'est produite, réessaie plus tard. 😖",
@@ -137,5 +137,12 @@
   "game.q.17": "Quelle petite chose illumine toujours ta journée ?",
   "game.q.18": "Si tu pouvais vivre n'importe où, ce serait où ?",
   "game.q.19": "Qu'est-ce qui t'a fait rire aux éclats la dernière fois ?",
-  "game.q.20": "Quelle opinion impopulaire as-tu ?"
+  "game.q.20": "Quelle opinion impopulaire as-tu ?",
+  "days.every": "tous les jours",
+  "days.mon_fri": "Du lundi au vendredi",
+  "days.mon_sat": "Du lundi au samedi",
+  "days.all": "Tous les jours",
+  "days.sun_thu": "Du dimanche au jeudi",
+  "opt.working_days.name": "jours_ouvres",
+  "opt.working_days.description": "Jours d'envoi du sondage (n'importe quels jours depuis le web)"
 }

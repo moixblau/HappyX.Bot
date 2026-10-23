@@ -63,6 +63,7 @@ type Guild struct {
 	Language        string `json:"language"`
 	KudosChannelID  string `json:"kudos_channel_id"` // empty: where the command is used
 	GamesEnabled    bool   `json:"games_enabled"`
+	WorkingDays     []int  `json:"working_days"` // ISO days the survey goes out, 1 is Monday
 	Active          bool   `json:"active"`
 }
 
@@ -81,6 +82,7 @@ type GuildPatch struct {
 	Language        *string `json:"language,omitempty"`
 	KudosChannelID  *string `json:"kudos_channel_id,omitempty"`
 	GamesEnabled    *bool   `json:"games_enabled,omitempty"`
+	WorkingDays     []int   `json:"working_days,omitempty"`
 }
 
 type Report struct {
