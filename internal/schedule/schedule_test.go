@@ -40,3 +40,19 @@ func TestReportDue(t *testing.T) {
 		t.Fatalf("monthly: got %s..%s %v", from, to, due)
 	}
 }
+
+func TestCurrentPeriod(t *testing.T) {
+	now := time.Date(2026, 10, 22, 22, 30, 0, 0, time.UTC) // Friday 23rd in Madrid
+	weekly := Settings{Timezone: "Europe/Madrid", ReportFrequency: "weekly"}
+	if from, to := CurrentPeriod(weekly, now); from != "2026-10-19" || to != "2026-10-23" {
+		t.Fatalf("weekly: got %s..%s", from, to)
+	}
+	monthly := Settings{Timezone: "Europe/Madrid", ReportFrequency: "monthly"}
+	if from, to := CurrentPeriod(monthly, now); from != "2026-10-01" || to != "2026-10-23" {
+		t.Fatalf("monthly: got %s..%s", from, to)
+	}
+	// On a Monday the week in progress is just today.
+	if from, to := CurrentPeriod(weekly, time.Date(2026, 10, 26, 9, 0, 0, 0, time.UTC)); from != "2026-10-26" || to != "2026-10-26" {
+		t.Fatalf("monday: got %s..%s", from, to)
+	}
+}
