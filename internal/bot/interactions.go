@@ -217,7 +217,7 @@ func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, use
 	}
 	msg := reportMessage(g, r)
 	b.respond(i, discordgo.InteractionResponseChannelMessageWithSource, &discordgo.InteractionResponseData{
-		Embeds: msg.Embeds, Flags: discordgo.MessageFlagsEphemeral,
+		Embeds: msg.Embeds, Files: msg.Files, Flags: discordgo.MessageFlagsEphemeral,
 	})
 }
 
