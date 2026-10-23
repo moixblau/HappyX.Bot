@@ -27,7 +27,7 @@ report. One bot serves any number of servers; their data is kept apart by
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
 | `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin` |
-| `/happyx report` | admin | see the last period's report now |
+| `/happyx report` | admin | see the last completed period's report now, or the one in progress with `period:current` |
 
 Discord shows these names translated for users whose client is in a supported language.
 

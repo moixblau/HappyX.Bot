@@ -10,6 +10,7 @@ import (
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
 	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/moixblau/HappyX.Bot/internal/schedule"
 )
 
 // Command and option names are the English ones; Discord shows the localized names from the
@@ -27,6 +28,10 @@ const (
 	optFrequency = "frequency"
 	optAdmin     = "admin"
 	optLanguage  = "language"
+	optPeriod    = "period"
+
+	periodLast    = "last"
+	periodCurrent = "current"
 )
 
 func commands() []*discordgo.ApplicationCommand {
@@ -62,6 +67,12 @@ func commands() []*discordgo.ApplicationCommand {
 			Name: en.T("freq." + f), NameLocalizations: *localized("freq." + f), Value: f,
 		})
 	}
+	period := opt(discordgo.ApplicationCommandOptionString, optPeriod)
+	for _, p := range []string{periodLast, periodCurrent} {
+		period.Choices = append(period.Choices, &discordgo.ApplicationCommandOptionChoice{
+			Name: en.T("period." + p), NameLocalizations: *localized("period." + p), Value: p,
+		})
+	}
 	language := opt(discordgo.ApplicationCommandOptionString, optLanguage)
 	for _, code := range i18n.Codes() {
 		language.Choices = append(language.Choices, &discordgo.ApplicationCommandOptionChoice{
@@ -78,7 +89,7 @@ func commands() []*discordgo.ApplicationCommand {
 			sub(cmdStatus),
 			sub(cmdPause),
 			sub(cmdResume),
-			sub(cmdReport),
+			sub(cmdReport, period),
 			sub(cmdConfig,
 				opt(discordgo.ApplicationCommandOptionBoolean, optAnonymous),
 				hour,
@@ -237,7 +248,7 @@ func (b *Bot) handleCommand(ctx context.Context, i *discordgo.InteractionCreate)
 	case cmdConfig:
 		b.cmdConfig(ctx, i, l, user, sub.Options)
 	case cmdReport:
-		b.cmdReport(ctx, i, l, user)
+		b.cmdReport(ctx, i, l, user, sub.Options)
 	}
 }
 
@@ -306,7 +317,7 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name))
 }
 
-func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User) {
+func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
 	if !b.isAdmin(ctx, i, l, user) {
 		return
 	}
@@ -315,7 +326,13 @@ func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *
 		b.replyError(i, l, err)
 		return
 	}
-	r, err := b.api.Report(ctx, i.GuildID, "", "")
+	from, to := "", "" // the API defaults to the last completed period
+	for _, o := range opts {
+		if o.Name == optPeriod && o.StringValue() == periodCurrent {
+			from, to = schedule.CurrentPeriod(schedule.Settings{Timezone: g.Timezone, ReportFrequency: g.ReportFrequency}, b.now())
+		}
+	}
+	r, err := b.api.Report(ctx, i.GuildID, from, to)
 	if err != nil {
 		b.replyError(i, l, err)
 		return
