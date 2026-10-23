@@ -49,6 +49,7 @@
   "resume.done": "Great! You'll get the daily survey by DM again.",
   "stop.done": "Done, you won't get this server's survey anymore. If you change your mind, use {resume_cmd} in the server.",
   "config.saved": "Settings saved: survey at {hour}:00 ({timezone}), {frequency} report sent to {admin}, anonymous: {anonymous}, language: {language}.",
+  "config.now_public": "From now on the admin can see who answers. Answers given while the server was anonymous stay anonymous.",
   "admin.only": "Only the HappyX admin ({admin}) can do this.",
   "error.generic": "Something went wrong, please try again later. 😖",
   "error.not_member": "You're not taking part in this server's survey. Use {resume_cmd} there to join.",
