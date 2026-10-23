@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -87,40 +88,92 @@ func noteModal(l *i18n.Locale, id surveyID) *discordgo.InteractionResponseData {
 	}
 }
 
-// reportMessage sends the report as an image, with the comments as embed fields (they can
-// be long and are easier to read as text). If the image can't be rendered, the embed carries
-// a text summary instead.
+// Discord limits: 4096 characters in an embed description and 6000 in the whole message. The
+// comments get a budget well under that, so a busy server's report still sends.
+const (
+	commentBudget = 3500
+	commentMax    = 300
+	maxComments   = 20 // more than this is a wall of text; the rest are counted
+)
+
+// reportMessage sends the report as an image, with a short summary and the comments as text
+// (they can be long and are easier to read that way). The embed colour follows the average mood.
+// If the image can't be rendered, the summary also carries the distribution.
 func reportMessage(l *i18n.Locale, g api.Guild, r api.Report) *discordgo.MessageSend {
 	embed := &discordgo.MessageEmbed{
 		Title:  fmt.Sprintf("HappyX · %s", g.Name),
 		Footer: &discordgo.MessageEmbedFooter{Text: l.T("report.period", "from", r.From, "to", r.To)},
-		Color:  0x2a78d6,
+		Color:  moodColor(r),
 	}
 	msg := &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
 	if png, err := report.Render(l, g.Name, r); err == nil {
 		msg.Files = []*discordgo.File{{Name: "report.png", ContentType: "image/png", Reader: bytes.NewReader(png)}}
 		embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://report.png"}
+		embed.Description = summary(l, r)
 	} else {
 		embed.Description = textSummary(l, r)
 	}
-	if len(r.Messages) > 0 {
-		embed.Description += "**" + l.T("report.comments") + "**"
+	embed.Description += comments(l, r.Messages)
+	return msg
+}
+
+func summary(l *i18n.Locale, r api.Report) string {
+	if r.Responses == 0 {
+		return l.T("report.no_responses")
 	}
-	const maxMessages = 15
-	for i, m := range r.Messages {
-		if i == maxMessages {
-			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name: "…", Value: l.T("report.more_comments", "n", len(r.Messages)-maxMessages),
-			})
+	return l.T("report.summary",
+		"average", l.T("report.average"), "value", fmt.Sprintf("%.1f", r.Average), "emoji", moodEmoji(int(r.Average+0.5)),
+		"responses", l.T("report.responses"), "count", r.Responses,
+		"people", l.T("report.people"), "people_count", r.Respondents)
+}
+
+// comments lists the comments as quotes with the day (and author, when not anonymous) underneath,
+// stopping at the budget with a count of the rest.
+func comments(l *i18n.Locale, msgs []api.ReportMsg) string {
+	if len(msgs) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("\n\n### 💬 " + l.T("report.comments") + "\n")
+	for i, m := range msgs {
+		meta := dayLabel(l, m.Day)
+		if m.Username != "" {
+			meta += " · " + m.Username
+		}
+		entry := fmt.Sprintf("> %s %s\n-# %s\n", moodEmoji(m.Mood),
+			strings.ReplaceAll(truncate(m.Message, commentMax), "\n", "\n> "), meta)
+		if i == maxComments || b.Len()+len(entry) > commentBudget {
+			b.WriteString("-# " + l.T("report.more_comments", "n", len(msgs)-i) + "\n")
 			break
 		}
-		name := fmt.Sprintf("%s %s", moodEmoji(m.Mood), m.Day)
-		if m.Username != "" {
-			name += " · " + m.Username
-		}
-		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: name, Value: truncate(m.Message, 1000)})
+		b.WriteString(entry)
 	}
-	return msg
+	return b.String()
+}
+
+// dayLabel is "Fri 23 Oct" in the locale's names.
+func dayLabel(l *i18n.Locale, day string) string {
+	d, err := time.Parse("2006-01-02", day)
+	if err != nil {
+		return day
+	}
+	return fmt.Sprintf("%s %d %s", l.List("date.weekdays")[d.Weekday()], d.Day(), l.List("date.months")[d.Month()-1])
+}
+
+// moodColor goes from red (bad week) to green (good week); grey without answers.
+func moodColor(r api.Report) int {
+	switch {
+	case r.Responses == 0:
+		return 0x8b8d98
+	case r.Average < 2:
+		return 0xe5484d
+	case r.Average < 3:
+		return 0xf5a524
+	case r.Average < 4:
+		return 0x2a78d6
+	default:
+		return 0x30a46c
+	}
 }
 
 func textSummary(l *i18n.Locale, r api.Report) string {
