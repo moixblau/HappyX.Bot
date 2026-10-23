@@ -57,6 +57,7 @@ type Guild struct {
 	Timezone        string `json:"timezone"`
 	SurveyHour      int    `json:"survey_hour"`
 	ReportFrequency string `json:"report_frequency"`
+	Language        string `json:"language"`
 	Active          bool   `json:"active"`
 }
 
@@ -72,6 +73,7 @@ type GuildPatch struct {
 	SurveyHour      *int    `json:"survey_hour,omitempty"`
 	ReportFrequency *string `json:"report_frequency,omitempty"`
 	AdminDiscordID  *string `json:"admin_discord_user_id,omitempty"`
+	Language        *string `json:"language,omitempty"`
 }
 
 type Report struct {

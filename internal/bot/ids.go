@@ -14,6 +14,7 @@ const (
 	actionMood      = "mood"      // button: record the mood
 	actionNote      = "note"      // button: open the comment modal
 	actionNoteModal = "notemodal" // modal submit: record mood + comment
+	actionStop      = "stop"      // button: stop getting this guild's survey (Mood is 0)
 	idPrefix        = "hx"
 )
 
@@ -34,11 +35,18 @@ func parseSurveyID(v string) (surveyID, bool) {
 		return surveyID{}, false
 	}
 	mood, err := strconv.Atoi(p[4])
-	if err != nil || mood < 1 || mood > 5 {
+	if err != nil {
 		return surveyID{}, false
 	}
 	switch p[1] {
 	case actionMood, actionNote, actionNoteModal:
+		if mood < 1 || mood > 5 {
+			return surveyID{}, false
+		}
+	case actionStop:
+		if mood != 0 {
+			return surveyID{}, false
+		}
 	default:
 		return surveyID{}, false
 	}
