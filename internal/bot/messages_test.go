@@ -105,3 +105,14 @@ func TestKudosCommand(t *testing.T) {
 		t.Fatalf("/happyx config should take a kudos channel: %+v", last)
 	}
 }
+
+// cmd/preview builds every scene in every language; none may be empty.
+func TestPreviews(t *testing.T) {
+	for _, code := range i18n.Codes() {
+		for _, p := range Previews(code) {
+			if p.Msg == nil || (p.Msg.Content == "" && len(p.Msg.Embeds) == 0) {
+				t.Errorf("%s: %q is empty", code, p.Title)
+			}
+		}
+	}
+}
