@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/i18n"
 )
 
 func TestReportMessageAttachesImage(t *testing.T) {
@@ -12,7 +13,7 @@ func TestReportMessageAttachesImage(t *testing.T) {
 		Distribution: map[string]int{"4": 1},
 		Days:         []api.ReportDay{{Day: "2026-10-19", Responses: 1, Average: 4}},
 		Messages:     []api.ReportMsg{{Day: "2026-10-19", Mood: 4, Message: "bien"}}}
-	msg := reportMessage(g, r)
+	msg := reportMessage(i18n.Get("es"), g, r)
 	if len(msg.Files) != 1 || msg.Embeds[0].Image == nil || msg.Embeds[0].Image.URL != "attachment://"+msg.Files[0].Name {
 		t.Fatalf("report should embed the attached PNG: %+v", msg.Embeds[0])
 	}
