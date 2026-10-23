@@ -47,6 +47,25 @@ func TestClientAgainstAPI(t *testing.T) {
 		t.Fatalf("second claim should be false without error: %v %v (first %v)", second, err, first)
 	}
 
+	const u2 = "200000000000000079"
+	if err := c.UpsertMember(ctx, g, u2, "tester2", nil); err != nil {
+		t.Fatal(err)
+	}
+	k, err := c.GiveKudos(ctx, g, u, u2, "gracias")
+	if err != nil && !errors.Is(err, ErrTooMany) { // reruns on the same day hit the limit
+		t.Fatal(err)
+	}
+	if err == nil && (k.FromUsername != "tester" || k.ToUsername != "tester2") {
+		t.Fatalf("kudos should come back with usernames: %+v", k)
+	}
+	var apiErr *Error
+	if _, err := c.GiveKudos(ctx, g, u, u, "yo"); !errors.As(err, &apiErr) || apiErr.Status != 400 {
+		t.Fatalf("self kudos: want 400, got %v", err)
+	}
+	if r, err := c.Report(ctx, g, today, today); err != nil || r.Kudos.Count < 1 || len(r.Kudos.Highlights) == 0 {
+		t.Fatalf("report kudos: %+v %v", r.Kudos, err)
+	}
+
 	if err := c.RemoveMember(ctx, g, u); err != nil {
 		t.Fatal(err)
 	}
