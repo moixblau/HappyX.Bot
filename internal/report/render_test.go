@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/i18n"
 )
 
 func sample(days int, skip map[int]bool) api.Report {
@@ -43,25 +44,28 @@ func TestRender(t *testing.T) {
 		"single":  sample(1, nil),
 		"empty":   {From: "2026-10-19", To: "2026-10-25", Anonymous: true, Distribution: map[string]int{}},
 	}
-	for name, r := range cases {
-		t.Run(name, func(t *testing.T) {
-			b, err := Render("Servidor de prueba con un nombre bastante largo para ver cómo se corta", r)
-			if err != nil {
-				t.Fatal(err)
-			}
-			img, err := png.Decode(bytes.NewReader(b))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if img.Bounds().Dx() != width {
-				t.Fatalf("width = %d", img.Bounds().Dx())
-			}
-			// REPORT_PNG_DIR=/some/dir writes the images for a visual check.
-			if dir := os.Getenv("REPORT_PNG_DIR"); dir != "" {
-				if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("report-%s.png", name)), b, 0o644); err != nil {
+	for _, lang := range i18n.Codes() {
+		for name, r := range cases {
+			name := lang + "-" + name
+			t.Run(name, func(t *testing.T) {
+				b, err := Render(i18n.Get(lang), "Servidor de prueba con un nombre bastante largo para ver cómo se corta", r)
+				if err != nil {
 					t.Fatal(err)
 				}
-			}
-		})
+				img, err := png.Decode(bytes.NewReader(b))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if img.Bounds().Dx() != width {
+					t.Fatalf("width = %d", img.Bounds().Dx())
+				}
+				// REPORT_PNG_DIR=/some/dir writes the images for a visual check.
+				if dir := os.Getenv("REPORT_PNG_DIR"); dir != "" {
+					if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("report-%s.png", name)), b, 0o644); err != nil {
+						t.Fatal(err)
+					}
+				}
+			})
+		}
 	}
 }

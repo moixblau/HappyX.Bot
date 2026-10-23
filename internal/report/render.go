@@ -16,6 +16,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/i18n"
 )
 
 // Palette: light chart surface, text inks and a single series hue (one measure per chart,
@@ -31,16 +32,11 @@ var (
 	colSeriesDim = hex("#cde2fb")
 )
 
-// MoodLabels are the 1-5 answers, worst first.
-var MoodLabels = []string{"Muy mal", "Mal", "Normal", "Bien", "Genial"}
-
 const (
 	width   = 1200
 	pad     = 56.0
 	dateFmt = "2006-01-02"
 )
-
-var weekdays = []string{"do", "lu", "ma", "mi", "ju", "vi", "sá"}
 
 var (
 	regular = mustFont(goregular.TTF)
@@ -48,8 +44,8 @@ var (
 	bold    = mustFont(gobold.TTF)
 )
 
-// Render draws the report. guildName is shown in the title.
-func Render(guildName string, r api.Report) ([]byte, error) {
+// Render draws the report in language l. guildName is shown in the title.
+func Render(l *i18n.Locale, guildName string, r api.Report) ([]byte, error) {
 	height := 1080
 	if r.Responses == 0 {
 		height = 480
@@ -64,7 +60,7 @@ func Render(guildName string, r api.Report) ([]byte, error) {
 	dc.DrawString(truncate(dc, "HappyX · "+guildName, width-2*pad), pad, 88)
 	setFont(dc, regular, 24)
 	dc.SetColor(colText2)
-	dc.DrawString(periodLabel(r.From, r.To), pad, 128)
+	dc.DrawString(periodLabel(l, r.From, r.To), pad, 128)
 
 	// Headline tiles
 	avg, resp, people := "—", "0", "0"
@@ -74,9 +70,9 @@ func Render(guildName string, r api.Report) ([]byte, error) {
 		people = fmt.Sprint(r.Respondents)
 	}
 	tiles := []struct{ label, value, unit string }{
-		{"Ánimo medio", avg, "/ 5"},
-		{"Respuestas", resp, ""},
-		{"Personas", people, ""},
+		{l.T("report.average"), avg, "/ 5"},
+		{l.T("report.responses"), resp, ""},
+		{l.T("report.people"), people, ""},
 	}
 	tileGap := 24.0
 	tileW := (width - 2*pad - 2*tileGap) / 3
@@ -88,14 +84,14 @@ func Render(guildName string, r api.Report) ([]byte, error) {
 	if r.Responses == 0 {
 		setFont(dc, medium, 26)
 		dc.SetColor(colText2)
-		dc.DrawStringAnchored("No hubo respuestas en este periodo.", width/2, 380, 0.5, 0.5)
-		drawFooter(dc, r, float64(height))
+		dc.DrawStringAnchored(l.T("report.no_responses"), width/2, 380, 0.5, 0.5)
+		drawFooter(dc, l, r, float64(height))
 		return encode(dc)
 	}
 
-	drawDailyChart(dc, r.Days, 360, 330)
-	drawDistribution(dc, r, 740)
-	drawFooter(dc, r, float64(height))
+	drawDailyChart(dc, l, r.Days, 360, 330)
+	drawDistribution(dc, l, r, 740)
+	drawFooter(dc, l, r, float64(height))
 	return encode(dc)
 }
 
@@ -119,12 +115,12 @@ func drawTile(dc *gg.Context, x, y, w, h float64, label, value, unit string) {
 
 // drawDailyChart plots the daily average mood as a line on the 1-5 scale. Days without
 // answers break the line.
-func drawDailyChart(dc *gg.Context, days []api.ReportDay, top, h float64) {
+func drawDailyChart(dc *gg.Context, l *i18n.Locale, days []api.ReportDay, top, h float64) {
 	setFont(dc, medium, 26)
 	dc.SetColor(colText)
-	dc.DrawString("Ánimo medio por día", pad, top)
+	dc.DrawString(l.T("report.daily"), pad, top)
 
-	labelW := 120.0
+	labelW := moodLabelWidth(dc, l)
 	left, right := pad+labelW, float64(width)-pad
 	plotTop, plotBottom := top+40, top+h-50
 	yOf := func(v float64) float64 { return plotBottom - (v-1)/4*(plotBottom-plotTop) }
@@ -138,7 +134,7 @@ func drawDailyChart(dc *gg.Context, days []api.ReportDay, top, h float64) {
 		dc.DrawLine(left, y, right, y)
 		dc.Stroke()
 		dc.SetColor(colText2)
-		dc.DrawStringAnchored(MoodLabels[m-1], left-16, y, 1, 0.35)
+		dc.DrawStringAnchored(moodLabel(l, m), left-16, y, 1, 0.35)
 	}
 	if len(days) == 0 {
 		return
@@ -169,7 +165,7 @@ func drawDailyChart(dc *gg.Context, days []api.ReportDay, top, h float64) {
 		if d.Responses == 0 {
 			dc.SetColor(colMuted)
 		}
-		dc.DrawStringAnchored(dayLabel(d.Day, len(days) <= 10), xOf(i), plotBottom+32, 0.5, 0)
+		dc.DrawStringAnchored(dayLabel(l, d.Day, len(days) <= 10), xOf(i), plotBottom+32, 0.5, 0)
 	}
 
 	// Line segments between consecutive answered days.
@@ -198,7 +194,7 @@ func drawDailyChart(dc *gg.Context, days []api.ReportDay, top, h float64) {
 	}
 
 	// Markers with a surface ring so they read over the line. Days without answers get no
-	// marker (a dot at the bottom would read as "Muy mal"); their x label is muted instead.
+	// marker (a dot at the bottom would read as the worst mood); their x label is muted instead.
 	for i, d := range days {
 		x := xOf(i)
 		if d.Responses == 0 {
@@ -215,12 +211,12 @@ func drawDailyChart(dc *gg.Context, days []api.ReportDay, top, h float64) {
 }
 
 // drawDistribution shows how many answers each mood got, best first.
-func drawDistribution(dc *gg.Context, r api.Report, top float64) {
+func drawDistribution(dc *gg.Context, l *i18n.Locale, r api.Report, top float64) {
 	setFont(dc, medium, 26)
 	dc.SetColor(colText)
-	dc.DrawString("Distribución de respuestas", pad, top)
+	dc.DrawString(l.T("report.distribution"), pad, top)
 
-	labelW := 120.0
+	labelW := moodLabelWidth(dc, l)
 	valueW := 130.0
 	left := pad + labelW
 	maxW := float64(width) - pad - valueW - left
@@ -234,7 +230,7 @@ func drawDistribution(dc *gg.Context, r api.Report, top float64) {
 		y := top + 32 + float64(row)*(rowH+gap)
 		setFont(dc, regular, 20)
 		dc.SetColor(colText2)
-		dc.DrawStringAnchored(MoodLabels[m-1], left-16, y+rowH/2, 1, 0.35)
+		dc.DrawStringAnchored(moodLabel(l, m), left-16, y+rowH/2, 1, 0.35)
 
 		// Track, then the bar: square at the baseline, rounded at the data end.
 		dc.SetColor(colSeriesDim)
@@ -262,17 +258,16 @@ func drawDistribution(dc *gg.Context, r api.Report, top float64) {
 	}
 }
 
-func drawFooter(dc *gg.Context, r api.Report, height float64) {
-	text := "Respuestas anónimas"
+func drawFooter(dc *gg.Context, l *i18n.Locale, r api.Report, height float64) {
+	text := l.T("report.anonymous")
 	if !r.Anonymous {
-		text = "Respuestas con nombre"
+		text = l.T("report.named")
 	}
-	if len(r.Messages) > 0 {
-		if len(r.Messages) == 1 {
-			text += " · 1 comentario en el mensaje"
-		} else {
-			text += fmt.Sprintf(" · %d comentarios en el mensaje", len(r.Messages))
-		}
+	switch n := len(r.Messages); {
+	case n == 1:
+		text += " · " + l.T("report.one_comment")
+	case n > 1:
+		text += " · " + l.T("report.n_comments", "n", n)
 	}
 	setFont(dc, regular, 20)
 	dc.SetColor(colText2)
@@ -281,23 +276,38 @@ func drawFooter(dc *gg.Context, r api.Report, height float64) {
 
 // --- helpers ---
 
-func periodLabel(from, to string) string {
+func moodLabel(l *i18n.Locale, m int) string { return l.T(fmt.Sprintf("mood.%d", m)) }
+
+// moodLabelWidth is the room left of a chart for the mood labels, so long translations fit.
+func moodLabelWidth(dc *gg.Context, l *i18n.Locale) float64 {
+	setFont(dc, regular, 20)
+	w := 0.0
+	for m := 1; m <= 5; m++ {
+		lw, _ := dc.MeasureString(moodLabel(l, m))
+		w = math.Max(w, lw)
+	}
+	return math.Max(120, w+16)
+}
+
+func periodLabel(l *i18n.Locale, from, to string) string {
 	f, err1 := time.Parse(dateFmt, from)
 	t, err2 := time.Parse(dateFmt, to)
 	if err1 != nil || err2 != nil {
 		return from + " – " + to
 	}
-	months := []string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"}
-	return fmt.Sprintf("Del %d %s al %d %s de %d", f.Day(), months[f.Month()-1], t.Day(), months[t.Month()-1], t.Year())
+	months := l.List("date.months")
+	return l.T("report.image_period",
+		"from_day", f.Day(), "from_month", months[f.Month()-1],
+		"to_day", t.Day(), "to_month", months[t.Month()-1], "year", t.Year())
 }
 
-func dayLabel(day string, withWeekday bool) string {
+func dayLabel(l *i18n.Locale, day string, withWeekday bool) string {
 	d, err := time.Parse(dateFmt, day)
 	if err != nil {
 		return day
 	}
 	if withWeekday {
-		return fmt.Sprintf("%s %d", weekdays[d.Weekday()], d.Day())
+		return fmt.Sprintf("%s %d", l.List("date.weekdays")[d.Weekday()], d.Day())
 	}
 	return fmt.Sprint(d.Day())
 }

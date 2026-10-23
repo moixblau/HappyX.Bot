@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/i18n"
 	"github.com/moixblau/HappyX.Bot/internal/schedule"
 )
 
@@ -20,6 +22,8 @@ type Bot struct {
 	api *api.Client
 	log *slog.Logger
 	now func() time.Time
+
+	commandID atomic.Pointer[string] // /happyx's ID once registered, for clickable mentions
 }
 
 func New(token string, client *api.Client, log *slog.Logger) (*Bot, error) {
@@ -61,8 +65,16 @@ func (b *Bot) Run(ctx context.Context) error {
 
 func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 	b.log.Info("connected", "user", r.User.Username, "guilds", len(r.Guilds))
-	if _, err := s.ApplicationCommandBulkOverwrite(r.User.ID, "", commands()); err != nil {
+	cmds, err := s.ApplicationCommandBulkOverwrite(r.User.ID, "", commands())
+	if err != nil {
 		b.log.Error("register commands", "err", err)
+		return
+	}
+	for _, c := range cmds {
+		if c.Name == "happyx" {
+			id := c.ID
+			b.commandID.Store(&id)
+		}
 	}
 }
 
@@ -181,7 +193,7 @@ func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) error {
 	if err != nil {
 		return err
 	}
-	msg := surveyMessage(g, day)
+	msg := surveyMessage(i18n.Get(g.Language), g, day)
 	failed := 0
 	for _, m := range members {
 		if err := b.dm(m.DiscordID, msg); err != nil {
@@ -201,7 +213,7 @@ func (b *Bot) sendReport(ctx context.Context, g api.Guild, from, to string) erro
 	if err != nil {
 		return err
 	}
-	return b.dm(g.AdminDiscordID, reportMessage(g, r))
+	return b.dm(g.AdminDiscordID, reportMessage(i18n.Get(g.Language), g, r))
 }
 
 func (b *Bot) dm(userID string, msg *discordgo.MessageSend) error {

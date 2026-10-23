@@ -8,59 +8,60 @@ import (
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/i18n"
 	"github.com/moixblau/HappyX.Bot/internal/report"
 )
 
-var moods = []struct {
-	Emoji string
-	Label string
-}{
-	{"😞", "Muy mal"},
-	{"😕", "Mal"},
-	{"😐", "Normal"},
-	{"🙂", "Bien"},
-	{"🤩", "Genial"},
-}
+// moodEmojis are the 1-5 answers, worst first. Their labels are mood.1-mood.5 in the catalogs.
+var moodEmojis = []string{"😞", "😕", "😐", "🙂", "🤩"}
 
 func moodEmoji(m int) string {
-	if m < 1 || m > len(moods) {
+	if m < 1 || m > len(moodEmojis) {
 		return "❔"
 	}
-	return moods[m-1].Emoji
+	return moodEmojis[m-1]
 }
 
-func surveyMessage(g api.Guild, day string) *discordgo.MessageSend {
-	buttons := make([]discordgo.MessageComponent, 0, len(moods))
-	for i, m := range moods {
+func surveyMessage(l *i18n.Locale, g api.Guild, day string) *discordgo.MessageSend {
+	buttons := make([]discordgo.MessageComponent, 0, len(moodEmojis))
+	for i, emoji := range moodEmojis {
 		buttons = append(buttons, discordgo.Button{
-			Label:    m.Label,
-			Emoji:    &discordgo.ComponentEmoji{Name: m.Emoji},
+			Label:    l.T(fmt.Sprintf("mood.%d", i+1)),
+			Emoji:    &discordgo.ComponentEmoji{Name: emoji},
 			Style:    discordgo.SecondaryButton,
 			CustomID: surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: i + 1}.String(),
 		})
 	}
-	privacy := "Tu respuesta es **anónima**: el administrador solo ve los resultados agregados."
+	privacy := l.T("survey.anonymous")
 	if !g.Anonymous {
-		privacy = "En este servidor el administrador **puede ver quién responde**."
+		privacy = l.T("survey.named")
 	}
 	return &discordgo.MessageSend{
-		Content: fmt.Sprintf("👋 ¿Cómo te encuentras hoy? (**%s**)\n%s", g.Name, privacy),
+		Content: l.T("survey.question", "guild", g.Name) + "\n" + privacy,
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: buttons},
+			discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+				discordgo.Button{
+					Label:    l.T("survey.stop_button"),
+					Emoji:    &discordgo.ComponentEmoji{Name: "🔕"},
+					Style:    discordgo.SecondaryButton,
+					CustomID: surveyID{Action: actionStop, GuildID: g.DiscordID, Day: day}.String(),
+				},
+			}},
 		},
 	}
 }
 
 // answeredMessage replaces the survey once answered, offering to add a comment.
-func answeredMessage(id surveyID, comment string) *discordgo.InteractionResponseData {
-	content := fmt.Sprintf("Gracias, apuntado %s para el %s.", moodEmoji(id.Mood), id.Day)
-	var components []discordgo.MessageComponent
+func answeredMessage(l *i18n.Locale, id surveyID, comment string) *discordgo.InteractionResponseData {
+	content := l.T("answer.thanks", "emoji", moodEmoji(id.Mood), "day", id.Day)
+	components := []discordgo.MessageComponent{}
 	if comment == "" {
-		content += "\n¿Quieres añadir un comentario? Es opcional."
+		content += "\n" + l.T("answer.comment_prompt")
 		note := id
 		note.Action = actionNote
 		components = []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
-			discordgo.Button{Label: "Añadir comentario", Emoji: &discordgo.ComponentEmoji{Name: "✏️"}, Style: discordgo.PrimaryButton, CustomID: note.String()},
+			discordgo.Button{Label: l.T("answer.comment_button"), Emoji: &discordgo.ComponentEmoji{Name: "✏️"}, Style: discordgo.PrimaryButton, CustomID: note.String()},
 		}}}
 	} else {
 		content += "\n> " + strings.ReplaceAll(comment, "\n", "\n> ")
@@ -68,19 +69,19 @@ func answeredMessage(id surveyID, comment string) *discordgo.InteractionResponse
 	return &discordgo.InteractionResponseData{Content: content, Components: components}
 }
 
-func noteModal(id surveyID) *discordgo.InteractionResponseData {
+func noteModal(l *i18n.Locale, id surveyID) *discordgo.InteractionResponseData {
 	id.Action = actionNoteModal
 	return &discordgo.InteractionResponseData{
 		CustomID: id.String(),
-		Title:    "Comentario (opcional)",
+		Title:    l.T("modal.title"),
 		Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
 			discordgo.TextInput{
 				CustomID:    "comment",
-				Label:       "¿Algo que quieras contar?",
+				Label:       l.T("modal.label"),
 				Style:       discordgo.TextInputParagraph,
 				Required:    true,
 				MaxLength:   500,
-				Placeholder: "Escribe aquí…",
+				Placeholder: l.T("modal.placeholder"),
 			},
 		}}},
 	}
@@ -89,27 +90,27 @@ func noteModal(id surveyID) *discordgo.InteractionResponseData {
 // reportMessage sends the report as an image, with the comments as embed fields (they can
 // be long and are easier to read as text). If the image can't be rendered, the embed carries
 // a text summary instead.
-func reportMessage(g api.Guild, r api.Report) *discordgo.MessageSend {
+func reportMessage(l *i18n.Locale, g api.Guild, r api.Report) *discordgo.MessageSend {
 	embed := &discordgo.MessageEmbed{
 		Title:  fmt.Sprintf("HappyX · %s", g.Name),
-		Footer: &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Del %s al %s", r.From, r.To)},
+		Footer: &discordgo.MessageEmbedFooter{Text: l.T("report.period", "from", r.From, "to", r.To)},
 		Color:  0x2a78d6,
 	}
 	msg := &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
-	if png, err := report.Render(g.Name, r); err == nil {
+	if png, err := report.Render(l, g.Name, r); err == nil {
 		msg.Files = []*discordgo.File{{Name: "report.png", ContentType: "image/png", Reader: bytes.NewReader(png)}}
 		embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://report.png"}
 	} else {
-		embed.Description = textSummary(r)
+		embed.Description = textSummary(l, r)
 	}
 	if len(r.Messages) > 0 {
-		embed.Description += "**Comentarios**"
+		embed.Description += "**" + l.T("report.comments") + "**"
 	}
 	const maxMessages = 15
 	for i, m := range r.Messages {
 		if i == maxMessages {
 			embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-				Name: "…", Value: fmt.Sprintf("y %d comentarios más", len(r.Messages)-maxMessages),
+				Name: "…", Value: l.T("report.more_comments", "n", len(r.Messages)-maxMessages),
 			})
 			break
 		}
@@ -122,14 +123,17 @@ func reportMessage(g api.Guild, r api.Report) *discordgo.MessageSend {
 	return msg
 }
 
-func textSummary(r api.Report) string {
+func textSummary(l *i18n.Locale, r api.Report) string {
 	if r.Responses == 0 {
-		return "No hubo respuestas en este periodo.\n\n"
+		return l.T("report.no_responses") + "\n\n"
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "**Media:** %.2f / 5 %s\n", r.Average, moodEmoji(int(r.Average+0.5)))
-	fmt.Fprintf(&b, "**Respuestas:** %d de %d personas\n\n", r.Responses, r.Respondents)
-	for i := len(moods); i >= 1; i-- {
+	b.WriteString(l.T("report.summary",
+		"average", l.T("report.average"), "value", fmt.Sprintf("%.2f", r.Average), "emoji", moodEmoji(int(r.Average+0.5)),
+		"responses", l.T("report.responses"), "count", r.Responses,
+		"people", l.T("report.people"), "people_count", r.Respondents))
+	b.WriteString("\n\n")
+	for i := len(moodEmojis); i >= 1; i-- {
 		n := r.Distribution[fmt.Sprint(i)]
 		fmt.Fprintf(&b, "%s %s %d\n", moodEmoji(i), bar(n, r.Responses), n)
 	}
