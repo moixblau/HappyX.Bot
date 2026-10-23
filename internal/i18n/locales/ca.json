@@ -46,6 +46,7 @@
   "resume.done": "Perfecte! Tornaràs a rebre l'enquesta diària per missatge privat.",
   "stop.done": "Fet, ja no rebràs l'enquesta d'aquest servidor. Si canvies d'idea, fes servir {resume_cmd} al servidor.",
   "config.saved": "Configuració desada: enquesta a les {hour}:00 ({timezone}), report {frequency} per a {admin}, anònim: {anonymous}, idioma: {language}.",
+  "config.now_public": "A partir d'ara l'administrador pot veure qui respon. Les respostes donades mentre el servidor era anònim continuen sent anònimes.",
   "admin.only": "Només l'administrador de HappyX ({admin}) pot fer això.",
   "error.generic": "Alguna cosa ha fallat, torna-ho a provar més tard. 😖",
   "error.not_member": "No participes en l'enquesta d'aquest servidor. Fes servir {resume_cmd} allà per apuntar-t'hi.",

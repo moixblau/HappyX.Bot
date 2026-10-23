@@ -332,7 +332,15 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 	b.ephemeral(i, l.T("config.saved",
 		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
-		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name)+"\n"+kudosChannelLine(l, g))
+		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name)+"\n"+kudosChannelLine(l, g)+publicNote(l, p))
+}
+
+// publicNote tells the admin who just turned anonymity off that earlier answers stay anonymous.
+func publicNote(l *i18n.Locale, p api.GuildPatch) string {
+	if p.Anonymous == nil || *p.Anonymous {
+		return ""
+	}
+	return "\n" + l.T("config.now_public")
 }
 
 func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {

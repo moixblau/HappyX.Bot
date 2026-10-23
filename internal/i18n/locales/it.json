@@ -48,6 +48,7 @@
   "resume.done": "Perfetto! Riceverai di nuovo il sondaggio giornaliero in messaggio privato.",
   "stop.done": "Fatto, non riceverai più il sondaggio di questo server. Se cambi idea, usa {resume_cmd} nel server.",
   "config.saved": "Impostazioni salvate: sondaggio alle {hour}:00 ({timezone}), report {frequency} inviato a {admin}, anonimo: {anonymous}, lingua: {language}.",
+  "config.now_public": "Da ora l'amministratore può vedere chi risponde. Le risposte date mentre il server era anonimo restano anonime.",
   "admin.only": "Solo l'admin di HappyX ({admin}) può farlo.",
   "error.generic": "Qualcosa è andato storto, riprova più tardi. 😖",
   "error.not_member": "Non partecipi al sondaggio di questo server. Usa {resume_cmd} lì per iscriverti.",
