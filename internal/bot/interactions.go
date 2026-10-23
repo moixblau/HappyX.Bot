@@ -329,18 +329,20 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 	if p.Language != nil {
 		l = i18n.Get(g.Language) // confirm in the language just chosen
 	}
-	b.ephemeral(i, l.T("config.saved",
-		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
-		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
-		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name)+"\n"+kudosChannelLine(l, g)+publicNote(l, p))
+	b.ephemeral(i, configSaved(l, g, p))
 }
 
-// publicNote tells the admin who just turned anonymity off that earlier answers stay anonymous.
-func publicNote(l *i18n.Locale, p api.GuildPatch) string {
-	if p.Anonymous == nil || *p.Anonymous {
-		return ""
+// configSaved confirms the new settings. When the change turned anonymity off, it adds that
+// earlier answers stay anonymous.
+func configSaved(l *i18n.Locale, g api.Guild, p api.GuildPatch) string {
+	s := l.T("config.saved",
+		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
+		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
+		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + "\n" + kudosChannelLine(l, g)
+	if p.Anonymous != nil && !*p.Anonymous {
+		s += "\n" + l.T("config.now_public")
 	}
-	return "\n" + l.T("config.now_public")
+	return s
 }
 
 func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {

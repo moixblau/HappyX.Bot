@@ -34,6 +34,8 @@ func Previews(code string) []Preview {
 	g := api.Guild{DiscordID: PreviewGuildID, Name: "Equipo Demo", AdminDiscordID: PreviewAdminID, Anonymous: true,
 		Timezone: "Europe/Madrid", SurveyHour: 13, ReportFrequency: "weekly", Language: code, KudosChannelID: PreviewChannelID}
 	b := &Bot{}
+	public, no := g, false
+	public.Anonymous = false
 	day := "2026-10-23"
 	kudosMsg := "Gracias por echarme un cable con el despliegue del viernes, sin ti no llegábamos 🚀"
 	link := "https://discord.com/channels/" + PreviewGuildID + "/" + PreviewChannelID + "/1"
@@ -61,6 +63,8 @@ func Previews(code string) []Preview {
 			"hour", "13", "timezone", g.Timezone, "frequency", l.T("freq.weekly"), "admin", "<@"+PreviewAdminID+">",
 			"anonymous", yesNo(l, true), "language", l.Name, "participants", 12, "you", l.T("status.receiving")) +
 			"\n" + kudosChannelLine(l, g))},
+		{Title: "Turning anonymity off", Channel: "#general", Command: "/happyx config anonymous:False", Ephemeral: true,
+			Msg: text(configSaved(l, public, api.GuildPatch{Anonymous: &no}))},
 		{Title: "Pause", Channel: "#general", Command: "/happyx pause", Ephemeral: true, Msg: text(l.T("pause.done", "resume_cmd", b.resumeMention()))},
 		{Title: "Weekly report", Channel: "DM", Msg: reportMessage(l, g, previewReport())},
 	}
