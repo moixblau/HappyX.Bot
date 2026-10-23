@@ -64,3 +64,27 @@ func CurrentPeriod(s Settings, now time.Time) (from, to string) {
 	}
 	return start.Format(DateLayout), today.Format(DateLayout)
 }
+
+// GameQuestionDue reports whether the week's «Who's who?» question should go out: from the
+// survey hour, Monday to Wednesday, so a game turned on mid-week still starts. week is the
+// round's Monday.
+func GameQuestionDue(s Settings, now time.Time) (week string, due bool) {
+	return gameDue(s, now, 0, 2)
+}
+
+// GameGuessDue reports whether members should be told guessing is open: from the survey hour,
+// Thursday to Sunday. week is the round's Monday.
+func GameGuessDue(s Settings, now time.Time) (week string, due bool) {
+	return gameDue(s, now, 3, 6)
+}
+
+// gameDue is due on days first..last of the week (0 is Monday) from the survey hour.
+func gameDue(s Settings, now time.Time, first, last int) (string, bool) {
+	local := now.In(s.location())
+	today := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
+	offset := (int(today.Weekday()) + 6) % 7
+	if offset < first || offset > last || local.Hour() < s.SurveyHour {
+		return "", false
+	}
+	return today.AddDate(0, 0, -offset).Format(DateLayout), true
+}

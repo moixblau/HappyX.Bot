@@ -62,6 +62,7 @@ type Guild struct {
 	ReportFrequency string `json:"report_frequency"`
 	Language        string `json:"language"`
 	KudosChannelID  string `json:"kudos_channel_id"` // empty: where the command is used
+	GamesEnabled    bool   `json:"games_enabled"`
 	Active          bool   `json:"active"`
 }
 
@@ -79,6 +80,7 @@ type GuildPatch struct {
 	AdminDiscordID  *string `json:"admin_discord_user_id,omitempty"`
 	Language        *string `json:"language,omitempty"`
 	KudosChannelID  *string `json:"kudos_channel_id,omitempty"`
+	GamesEnabled    *bool   `json:"games_enabled,omitempty"`
 }
 
 type Report struct {
@@ -215,6 +217,49 @@ func (c *Client) Report(ctx context.Context, guildID, from, to string) (Report, 
 	var r Report
 	err := c.do(ctx, http.MethodGet, path, nil, &r)
 	return r, err
+}
+
+// GameRound is a week of the «Who's who?» game.
+type GameRound struct {
+	Week           string `json:"week"`
+	Question       string `json:"question"`
+	Phase          string `json:"phase"` // answering, guessing or finished
+	GuessingStarts string `json:"guessing_starts"`
+	LastDay        string `json:"last_day"`
+	Answers        int    `json:"answers"`
+	MinAnswers     int    `json:"min_answers"`
+}
+
+// API messages for the game's 409s.
+const (
+	MsgGameClosed = "not open now"
+	MsgGamesOff   = "games are turned off in this guild"
+)
+
+// StartGameRound opens the week's round (a Monday) with question, or returns the round that
+// already exists. It fails with ErrConflict when games are off or answering is over.
+func (c *Client) StartGameRound(ctx context.Context, guildID, week, question string) (GameRound, error) {
+	var r GameRound
+	err := c.do(ctx, http.MethodPost, "/v1/guilds/"+url.PathEscape(guildID)+"/game/rounds",
+		map[string]string{"week": week, "question": question}, &r)
+	return r, err
+}
+
+func (c *Client) GameRound(ctx context.Context, guildID, week string) (GameRound, error) {
+	var r GameRound
+	err := c.do(ctx, http.MethodGet, gameRoundPath(guildID, week), nil, &r)
+	return r, err
+}
+
+// AnswerGame stores a member's answer. It fails with ErrForbidden for paused members and
+// ErrConflict once answers are closed or games are off.
+func (c *Client) AnswerGame(ctx context.Context, guildID, week, userID, answer string) error {
+	return c.do(ctx, http.MethodPut, gameRoundPath(guildID, week)+"/answers/"+url.PathEscape(userID),
+		map[string]string{"answer": answer}, nil)
+}
+
+func gameRoundPath(guildID, week string) string {
+	return "/v1/guilds/" + url.PathEscape(guildID) + "/game/rounds/" + url.PathEscape(week)
 }
 
 func memberPath(guildID, userID string) string {
