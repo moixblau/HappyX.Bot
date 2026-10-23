@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bwmarrin/discordgo"
+
 	"github.com/moixblau/HappyX.Bot/internal/api"
 	"github.com/moixblau/HappyX.Bot/internal/i18n"
 )
@@ -31,6 +33,11 @@ func TestReportMessageFitsDiscordLimits(t *testing.T) {
 		r.Messages = append(r.Messages, api.ReportMsg{Day: "2026-10-19", Mood: 1 + i%5,
 			Message: strings.Repeat("palabra ", 80), Username: "someone_with_a_long_name"})
 	}
+	r.Kudos = api.KudosSummary{Count: 60, Givers: 30, Receivers: 25}
+	for i := 0; i < 5; i++ {
+		r.Kudos.Highlights = append(r.Kudos.Highlights, api.Kudos{Day: "2026-10-19", Message: strings.Repeat("gracias ", 40),
+			FromUsername: "someone_with_a_long_name", ToUsername: "someone_else_with_a_long_name"})
+	}
 	e := reportMessage(i18n.Get("es"), api.Guild{Name: strings.Repeat("x", 100)}, r).Embeds[0]
 	total := len([]rune(e.Title)) + len([]rune(e.Description)) + len([]rune(e.Footer.Text))
 	if len([]rune(e.Description)) > 4096 || total > 6000 {
@@ -38,5 +45,63 @@ func TestReportMessageFitsDiscordLimits(t *testing.T) {
 	}
 	if !strings.Contains(e.Description, "comentarios más") {
 		t.Fatal("should say how many comments were left out")
+	}
+}
+
+func TestReportMessageKudos(t *testing.T) {
+	r := api.Report{From: "2026-10-19", To: "2026-10-25", Anonymous: true,
+		Kudos: api.KudosSummary{Count: 7, Givers: 3, Receivers: 2, Highlights: []api.Kudos{
+			{Day: "2026-10-23", FromUsername: "ana", ToUsername: "bea", Message: "gracias por el cable\ncon el despliegue"},
+		}}}
+	d := reportMessage(i18n.Get("es"), api.Guild{Name: "Test"}, r).Embeds[0].Description
+	for _, want := range []string{"### 🙌 Kudos", "**7** kudos · **2** personas", "> gracias por el cable\n> con el despliegue", "-# ana → bea · vi 23 oct", "y 6 kudos más"} {
+		if !strings.Contains(strings.ToLower(d), strings.ToLower(want)) {
+			t.Errorf("missing %q in:\n%s", want, d)
+		}
+	}
+	if strings.Contains(reportMessage(i18n.Get("es"), api.Guild{}, api.Report{}).Embeds[0].Description, "Kudos") {
+		t.Error("no kudos section without kudos")
+	}
+}
+
+func TestKudosMessages(t *testing.T) {
+	l := i18n.Get("es")
+	card := kudosCard(l, "200000000000000001", "200000000000000002", "gracias @everyone")
+	e := card.Embeds[0]
+	if !strings.Contains(e.Description, "<@200000000000000001> da kudos a <@200000000000000002>") || !strings.Contains(e.Description, "> gracias @everyone") {
+		t.Fatalf("card: %q", e.Description)
+	}
+	if card.AllowedMentions == nil || len(card.AllowedMentions.Parse) != 0 {
+		t.Fatal("the card must not ping anyone")
+	}
+	dm := kudosDM(l, api.Guild{Name: "Equipo"}, "200000000000000001", "gracias", "https://discord.com/channels/1/2/3")
+	if !strings.Contains(dm.Content, "**Equipo**") || !strings.Contains(dm.Content, "> gracias") {
+		t.Fatalf("dm: %q", dm.Content)
+	}
+	btn := dm.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.Button)
+	if btn.Style != discordgo.LinkButton || btn.URL != "https://discord.com/channels/1/2/3" {
+		t.Fatalf("dm should link to the card: %+v", btn)
+	}
+}
+
+func TestKudosCommand(t *testing.T) {
+	var kudos, config *discordgo.ApplicationCommandOption
+	for _, o := range commands()[0].Options {
+		switch o.Name {
+		case cmdKudos:
+			kudos = o
+		case cmdConfig:
+			config = o
+		}
+	}
+	if kudos == nil || len(kudos.Options) != 2 || !kudos.Options[0].Required || !kudos.Options[1].Required {
+		t.Fatalf("/happyx kudos needs a required user and message: %+v", kudos)
+	}
+	if kudos.Options[0].Type != discordgo.ApplicationCommandOptionUser || kudos.Options[1].MaxLength != kudosMaxLength {
+		t.Fatalf("kudos options: %+v %+v", kudos.Options[0], kudos.Options[1])
+	}
+	last := config.Options[len(config.Options)-1]
+	if last.Name != optKudosChan || last.Type != discordgo.ApplicationCommandOptionChannel {
+		t.Fatalf("/happyx config should take a kudos channel: %+v", last)
 	}
 }

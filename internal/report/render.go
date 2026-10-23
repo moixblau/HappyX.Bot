@@ -73,9 +73,10 @@ func Render(l *i18n.Locale, guildName string, r api.Report) ([]byte, error) {
 		{l.T("report.average"), avg, "/ 5"},
 		{l.T("report.responses"), resp, ""},
 		{l.T("report.people"), people, ""},
+		{l.T("report.kudos"), fmt.Sprint(r.Kudos.Count), ""},
 	}
 	tileGap := 24.0
-	tileW := (width - 2*pad - 2*tileGap) / 3
+	tileW := (width - 2*pad - float64(len(tiles)-1)*tileGap) / float64(len(tiles))
 	for i, t := range tiles {
 		x := pad + float64(i)*(tileW+tileGap)
 		drawTile(dc, x, 164, tileW, 140, t.label, t.value, t.unit)
@@ -101,7 +102,7 @@ func drawTile(dc *gg.Context, x, y, w, h float64, label, value, unit string) {
 	dc.Fill()
 	setFont(dc, regular, 22)
 	dc.SetColor(colText2)
-	dc.DrawString(label, x+24, y+42)
+	dc.DrawString(truncate(dc, label, w-48), x+24, y+42)
 	setFont(dc, bold, 56)
 	dc.SetColor(colText)
 	dc.DrawString(value, x+24, y+112)

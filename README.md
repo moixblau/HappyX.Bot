@@ -14,6 +14,11 @@ report. One bot serves any number of servers; their data is kept apart by
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
+- **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card is posted
+  in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
+  and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
+  Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
+  since they are public anyway.
 - The API records each survey and report it has sent, so restarts never send twice.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 - **Languages**: each server has a language (English by default, set with `/happyx config language`).
@@ -26,7 +31,8 @@ report. One bot serves any number of servers; their data is kept apart by
 | --- | --- | --- |
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
-| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin` |
+| `/happyx kudos` | everyone | `user`, `message` (≤300): publicly thank a teammate |
+| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel` |
 | `/happyx report` | admin | see the last completed period's report now, or the one in progress with `period:current` |
 
 Discord shows these names translated for users whose client is in a supported language.
@@ -52,7 +58,9 @@ Discord allows at most 25 choices, so past 25 languages the option will need aut
 2. Under **Bot > Privileged Gateway Intents**, enable **Server Members Intent** (needed to list members).
 3. Copy the bot token into `DISCORD_TOKEN`.
 4. Invite it with **OAuth2 > URL Generator**, scopes `bot` and `applications.commands`. No extra
-   permissions are needed; it only sends DMs.
+   permissions are needed for the survey and reports, which go by DM. To post kudos in a
+   `kudos_channel`, the bot needs **View Channel**, **Send Messages** and **Embed Links** there;
+   otherwise kudos are posted as the reply to the command, which needs no permissions.
 
 Members need "Allow direct messages from server members" enabled (Discord's default) to receive the survey.
 

@@ -17,6 +17,7 @@ var (
 	ErrNotFound  = errors.New("not found")
 	ErrConflict  = errors.New("conflict")
 	ErrForbidden = errors.New("forbidden")
+	ErrTooMany   = errors.New("too many requests")
 )
 
 // Error is a non-2xx answer from the API.
@@ -35,6 +36,8 @@ func (e *Error) Is(target error) bool {
 		return e.Status == http.StatusConflict
 	case ErrForbidden:
 		return e.Status == http.StatusForbidden
+	case ErrTooMany:
+		return e.Status == http.StatusTooManyRequests
 	}
 	return false
 }
@@ -58,6 +61,7 @@ type Guild struct {
 	SurveyHour      int    `json:"survey_hour"`
 	ReportFrequency string `json:"report_frequency"`
 	Language        string `json:"language"`
+	KudosChannelID  string `json:"kudos_channel_id"` // empty: where the command is used
 	Active          bool   `json:"active"`
 }
 
@@ -74,6 +78,7 @@ type GuildPatch struct {
 	ReportFrequency *string `json:"report_frequency,omitempty"`
 	AdminDiscordID  *string `json:"admin_discord_user_id,omitempty"`
 	Language        *string `json:"language,omitempty"`
+	KudosChannelID  *string `json:"kudos_channel_id,omitempty"`
 }
 
 type Report struct {
@@ -87,6 +92,24 @@ type Report struct {
 	Distribution   map[string]int `json:"distribution"`
 	Days           []ReportDay    `json:"days"`
 	Messages       []ReportMsg    `json:"messages"`
+	Kudos          KudosSummary   `json:"kudos"`
+}
+
+// KudosSummary counts the period's kudos; Highlights are the latest few, newest first.
+type KudosSummary struct {
+	Count      int     `json:"count"`
+	Givers     int     `json:"givers"`
+	Receivers  int     `json:"receivers"`
+	Highlights []Kudos `json:"highlights"`
+}
+
+type Kudos struct {
+	Day          string `json:"day"`
+	FromID       string `json:"from_discord_user_id"`
+	FromUsername string `json:"from_username"`
+	ToID         string `json:"to_discord_user_id"`
+	ToUsername   string `json:"to_username"`
+	Message      string `json:"message"`
 }
 
 type ReportDay struct {
@@ -157,6 +180,16 @@ func (c *Client) RecordMood(ctx context.Context, guildID, userID, day string, mo
 	return c.do(ctx, http.MethodPut, memberPath(guildID, userID)+"/mood", map[string]any{
 		"mood": mood, "message": message, "day": day,
 	}, nil)
+}
+
+// GiveKudos records kudos from one member to another. It fails with ErrForbidden when either
+// isn't a known member and ErrTooMany when the giver reached today's limit.
+func (c *Client) GiveKudos(ctx context.Context, guildID, fromID, toID, message string) (Kudos, error) {
+	var k Kudos
+	err := c.do(ctx, http.MethodPost, "/v1/guilds/"+url.PathEscape(guildID)+"/kudos", map[string]string{
+		"from_discord_user_id": fromID, "to_discord_user_id": toID, "message": message,
+	}, &k)
+	return k, err
 }
 
 // ClaimDispatch returns true when this caller should send the survey or report for period,
