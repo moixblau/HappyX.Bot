@@ -11,8 +11,8 @@ report. One bot serves any number of servers; their data is kept apart by
   human member (bots are ignored). New members are added as they join; members who leave are removed.
 - **Survey**: from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
   five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
-- **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets a
-  summary of the last period by DM.
+- **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
+  last period by DM as an image (average, daily trend, distribution) plus the comments as text.
 - The API records each survey and report it has sent, so restarts never send twice.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 

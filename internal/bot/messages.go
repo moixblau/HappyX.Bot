@@ -1,12 +1,14 @@
 package bot
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 
 	"github.com/moixblau/HappyX.Bot/internal/api"
+	"github.com/moixblau/HappyX.Bot/internal/report"
 )
 
 var moods = []struct {
@@ -84,24 +86,24 @@ func noteModal(id surveyID) *discordgo.InteractionResponseData {
 	}
 }
 
-// reportMessage is a text version of the report. The image version replaces it later.
+// reportMessage sends the report as an image, with the comments as embed fields (they can
+// be long and are easier to read as text). If the image can't be rendered, the embed carries
+// a text summary instead.
 func reportMessage(g api.Guild, r api.Report) *discordgo.MessageSend {
-	var b strings.Builder
-	if r.Responses == 0 {
-		b.WriteString("No hubo respuestas en este periodo.")
-	} else {
-		fmt.Fprintf(&b, "**Media:** %.2f / 5 %s\n", r.Average, moodEmoji(int(r.Average+0.5)))
-		fmt.Fprintf(&b, "**Respuestas:** %d de %d personas\n\n", r.Responses, r.Respondents)
-		for i := len(moods); i >= 1; i-- {
-			n := r.Distribution[fmt.Sprint(i)]
-			fmt.Fprintf(&b, "%s %s %d\n", moodEmoji(i), bar(n, r.Responses), n)
-		}
-	}
 	embed := &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("HappyX · %s", g.Name),
-		Description: b.String(),
-		Footer:      &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Del %s al %s", r.From, r.To)},
-		Color:       0x5865F2,
+		Title:  fmt.Sprintf("HappyX · %s", g.Name),
+		Footer: &discordgo.MessageEmbedFooter{Text: fmt.Sprintf("Del %s al %s", r.From, r.To)},
+		Color:  0x2a78d6,
+	}
+	msg := &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
+	if png, err := report.Render(g.Name, r); err == nil {
+		msg.Files = []*discordgo.File{{Name: "report.png", ContentType: "image/png", Reader: bytes.NewReader(png)}}
+		embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://report.png"}
+	} else {
+		embed.Description = textSummary(r)
+	}
+	if len(r.Messages) > 0 {
+		embed.Description += "**Comentarios**"
 	}
 	const maxMessages = 15
 	for i, m := range r.Messages {
@@ -117,7 +119,21 @@ func reportMessage(g api.Guild, r api.Report) *discordgo.MessageSend {
 		}
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{Name: name, Value: truncate(m.Message, 1000)})
 	}
-	return &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
+	return msg
+}
+
+func textSummary(r api.Report) string {
+	if r.Responses == 0 {
+		return "No hubo respuestas en este periodo.\n\n"
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "**Media:** %.2f / 5 %s\n", r.Average, moodEmoji(int(r.Average+0.5)))
+	fmt.Fprintf(&b, "**Respuestas:** %d de %d personas\n\n", r.Responses, r.Respondents)
+	for i := len(moods); i >= 1; i-- {
+		n := r.Distribution[fmt.Sprint(i)]
+		fmt.Fprintf(&b, "%s %s %d\n", moodEmoji(i), bar(n, r.Responses), n)
+	}
+	return b.String() + "\n"
 }
 
 func bar(n, total int) string {
