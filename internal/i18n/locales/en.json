@@ -36,7 +36,7 @@
   "report.image_period": "{from_day} {from_month} – {to_day} {to_month} {year}",
   "date.months": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec",
   "date.weekdays": "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
-  "status.text": "**Survey:** every day at {hour}:00 ({timezone})\n**Report:** {frequency}, sent to {admin}\n**Anonymous:** {anonymous}\n**Language:** {language}\n**Participants:** {participants}\n**You:** {you}",
+  "status.text": "**Survey:** {days} at {hour}:00 ({timezone})\n**Report:** {frequency}, sent to {admin}\n**Anonymous:** {anonymous}\n**Language:** {language}\n**Participants:** {participants}\n**You:** {you}",
   "status.receiving": "you receive the survey",
   "status.paused": "paused",
   "freq.weekly": "weekly",
@@ -48,7 +48,7 @@
   "pause.done": "Done, you won't get this server's survey anymore. Use {resume_cmd} to come back.",
   "resume.done": "Great! You'll get the daily survey by DM again.",
   "stop.done": "Done, you won't get this server's survey anymore. If you change your mind, use {resume_cmd} in the server.",
-  "config.saved": "Settings saved: survey at {hour}:00 ({timezone}), {frequency} report sent to {admin}, anonymous: {anonymous}, language: {language}.",
+  "config.saved": "Settings saved: survey {days} at {hour}:00 ({timezone}), {frequency} report sent to {admin}, anonymous: {anonymous}, language: {language}.",
   "config.now_public": "From now on the admin can see who answers. Answers given while the server was anonymous stay anonymous.",
   "admin.only": "Only the HappyX admin ({admin}) can do this.",
   "error.generic": "Something went wrong, please try again later. 😖",
@@ -138,5 +138,12 @@
   "game.q.17": "What small thing always makes your day better?",
   "game.q.18": "If you could live anywhere, where would it be?",
   "game.q.19": "What's the last thing that made you laugh out loud?",
-  "game.q.20": "What's an unpopular opinion you hold?"
+  "game.q.20": "What's an unpopular opinion you hold?",
+  "days.every": "every day",
+  "days.mon_fri": "Monday to Friday",
+  "days.mon_sat": "Monday to Saturday",
+  "days.all": "Every day",
+  "days.sun_thu": "Sunday to Thursday",
+  "opt.working_days.name": "working_days",
+  "opt.working_days.description": "Days the survey goes out (pick any days on the web)"
 }

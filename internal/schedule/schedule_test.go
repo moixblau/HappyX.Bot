@@ -19,6 +19,18 @@ func TestSurveyDue(t *testing.T) {
 	if day, _ := SurveyDue(s, time.Date(2026, 10, 22, 22, 30, 0, 0, time.UTC)); day != "2026-10-23" {
 		t.Fatalf("day should follow the guild timezone, got %s", day)
 	}
+	// Saturday is off by default.
+	if _, due := SurveyDue(s, time.Date(2026, 10, 24, 11, 30, 0, 0, time.UTC)); due {
+		t.Fatal("should not be due on a weekend by default")
+	}
+	// Sunday to Thursday: due on Sunday, not on Friday.
+	s.WorkingDays = []int{7, 1, 2, 3, 4}
+	if _, due := SurveyDue(s, time.Date(2026, 10, 25, 12, 30, 0, 0, time.UTC)); !due {
+		t.Fatal("should be due on a working Sunday")
+	}
+	if _, due := SurveyDue(s, time.Date(2026, 10, 23, 11, 30, 0, 0, time.UTC)); due {
+		t.Fatal("should not be due on a Friday off")
+	}
 }
 
 func TestReportDue(t *testing.T) {

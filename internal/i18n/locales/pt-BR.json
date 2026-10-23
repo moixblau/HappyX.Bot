@@ -35,7 +35,7 @@
   "report.image_period": "De {from_day} {from_month} a {to_day} {to_month} de {year}",
   "date.months": "jan,fev,mar,abr,mai,jun,jul,ago,set,out,nov,dez",
   "date.weekdays": "dom,seg,ter,qua,qui,sex,sáb",
-  "status.text": "**Pesquisa:** todos os dias às {hour}:00 ({timezone})\n**Relatório:** {frequency}, enviado para {admin}\n**Anônimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Você:** {you}",
+  "status.text": "**Pesquisa:** {days} às {hour}:00 ({timezone})\n**Relatório:** {frequency}, enviado para {admin}\n**Anônimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Você:** {you}",
   "status.receiving": "você recebe a pesquisa",
   "status.paused": "pausado",
   "freq.weekly": "semanal",
@@ -47,7 +47,7 @@
   "pause.done": "Pronto, você não vai mais receber a pesquisa deste servidor. Use {resume_cmd} para voltar.",
   "resume.done": "Perfeito! Você vai voltar a receber a pesquisa diária por mensagem direta.",
   "stop.done": "Pronto, você não vai mais receber a pesquisa deste servidor. Se mudar de ideia, use {resume_cmd} no servidor.",
-  "config.saved": "Configurações salvas: pesquisa às {hour}:00 ({timezone}), relatório {frequency} enviado para {admin}, anônimo: {anonymous}, idioma: {language}.",
+  "config.saved": "Configurações salvas: pesquisa {days} às {hour}:00 ({timezone}), relatório {frequency} enviado para {admin}, anônimo: {anonymous}, idioma: {language}.",
   "config.now_public": "A partir de agora o administrador pode ver quem responde. As respostas dadas enquanto o servidor era anônimo continuam anônimas.",
   "admin.only": "Só o admin do HappyX ({admin}) pode fazer isso.",
   "error.generic": "Algo deu errado, tente de novo mais tarde. 😖",
@@ -137,5 +137,12 @@
   "game.q.17": "Que pequena coisa sempre melhora o seu dia?",
   "game.q.18": "Se pudesse morar em qualquer lugar, onde seria?",
   "game.q.19": "Qual foi a última coisa que te fez rir alto?",
-  "game.q.20": "Que opinião impopular você tem?"
+  "game.q.20": "Que opinião impopular você tem?",
+  "days.every": "todos os dias",
+  "days.mon_fri": "Segunda a sexta",
+  "days.mon_sat": "Segunda a sábado",
+  "days.all": "Todos os dias",
+  "days.sun_thu": "Domingo a quinta",
+  "opt.working_days.name": "dias_uteis",
+  "opt.working_days.description": "Dias em que a pesquisa é enviada (na web dá para escolher qualquer dia)"
 }

@@ -101,14 +101,17 @@ func TestKudosCommand(t *testing.T) {
 	if kudos.Options[0].Type != discordgo.ApplicationCommandOptionUser || kudos.Options[1].MaxLength != kudosMaxLength {
 		t.Fatalf("kudos options: %+v %+v", kudos.Options[0], kudos.Options[1])
 	}
-	byName := map[string]*discordgo.ApplicationCommandOption{}
+	configOpts := map[string]*discordgo.ApplicationCommandOption{}
 	for _, o := range config.Options {
-		byName[o.Name] = o
+		configOpts[o.Name] = o
 	}
-	if o := byName[optKudosChan]; o == nil || o.Type != discordgo.ApplicationCommandOptionChannel {
+	if o := configOpts[optKudosChan]; o == nil || o.Type != discordgo.ApplicationCommandOptionChannel {
 		t.Fatalf("/happyx config should take a kudos channel: %+v", o)
 	}
-	if o := byName[optGames]; o == nil || o.Type != discordgo.ApplicationCommandOptionBoolean {
+	if o := configOpts[optWorkDays]; o == nil || len(o.Choices) != len(workingDayPresets) {
+		t.Fatalf("/happyx config should offer the working day presets: %+v", o)
+	}
+	if o := configOpts[optGames]; o == nil || o.Type != discordgo.ApplicationCommandOptionBoolean {
 		t.Fatalf("/happyx config should turn games on and off: %+v", o)
 	}
 }
@@ -149,6 +152,29 @@ func TestPreviews(t *testing.T) {
 			if p.Msg == nil || (p.Msg.Content == "" && len(p.Msg.Embeds) == 0) {
 				t.Errorf("%s: %q is empty", code, p.Title)
 			}
+		}
+	}
+}
+
+func TestWorkingDaysText(t *testing.T) {
+	en, es := i18n.Get("en"), i18n.Get("es")
+	for _, c := range []struct {
+		l    *i18n.Locale
+		days []int
+		want string
+	}{
+		{en, nil, "Mon–Fri"},
+		{en, []int{1, 2, 3, 4, 5}, "Mon–Fri"},
+		{es, []int{1, 2, 3, 4, 5, 6}, "lu–sá"},
+		{en, []int{7, 1, 2, 3, 4}, "Sun–Thu"},
+		{en, []int{1, 3, 5}, "Mon, Wed, Fri"},
+		{en, []int{1, 2, 4, 5, 6}, "Mon, Tue, Thu–Sat"},
+		{en, []int{6, 7}, "Sat, Sun"},
+		{en, []int{1, 2, 3, 4, 5, 6, 7}, "every day"},
+		{es, []int{1, 2, 3, 4, 5, 6, 7}, "cada día"},
+	} {
+		if got := workingDaysText(c.l, c.days); got != c.want {
+			t.Errorf("%v: got %q, want %q", c.days, got, c.want)
 		}
 	}
 }

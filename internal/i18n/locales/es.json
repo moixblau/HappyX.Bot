@@ -36,7 +36,7 @@
   "report.image_period": "Del {from_day} {from_month} al {to_day} {to_month} de {year}",
   "date.months": "ene,feb,mar,abr,may,jun,jul,ago,sep,oct,nov,dic",
   "date.weekdays": "do,lu,ma,mi,ju,vi,sá",
-  "status.text": "**Encuesta:** cada día a las {hour}:00 ({timezone})\n**Report:** {frequency}, para {admin}\n**Anónimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Tú:** {you}",
+  "status.text": "**Encuesta:** {days} a las {hour}:00 ({timezone})\n**Report:** {frequency}, para {admin}\n**Anónimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Tú:** {you}",
   "status.receiving": "recibes la encuesta",
   "status.paused": "en pausa",
   "freq.weekly": "semanal",
@@ -48,7 +48,7 @@
   "pause.done": "Hecho, ya no recibirás la encuesta de este servidor. Usa {resume_cmd} para volver.",
   "resume.done": "¡Perfecto! Volverás a recibir la encuesta diaria por mensaje privado.",
   "stop.done": "Hecho, ya no recibirás la encuesta de este servidor. Si cambias de idea, usa {resume_cmd} en el servidor.",
-  "config.saved": "Configuración guardada: encuesta a las {hour}:00 ({timezone}), report {frequency} para {admin}, anónimo: {anonymous}, idioma: {language}.",
+  "config.saved": "Configuración guardada: encuesta {days} a las {hour}:00 ({timezone}), report {frequency} para {admin}, anónimo: {anonymous}, idioma: {language}.",
   "config.now_public": "A partir de ahora el administrador puede ver quién responde. Las respuestas dadas mientras el servidor era anónimo siguen siendo anónimas.",
   "admin.only": "Solo el administrador de HappyX ({admin}) puede hacer esto.",
   "error.generic": "Algo ha fallado, inténtalo más tarde. 😖",
@@ -138,5 +138,12 @@
   "game.q.17": "¿Qué pequeña cosa siempre te alegra el día?",
   "game.q.18": "Si pudieras vivir en cualquier lugar, ¿dónde sería?",
   "game.q.19": "¿Qué fue lo último que te hizo reír a carcajadas?",
-  "game.q.20": "¿Qué opinión impopular tienes?"
+  "game.q.20": "¿Qué opinión impopular tienes?",
+  "days.every": "cada día",
+  "days.mon_fri": "De lunes a viernes",
+  "days.mon_sat": "De lunes a sábado",
+  "days.all": "Todos los días",
+  "days.sun_thu": "De domingo a jueves",
+  "opt.working_days.name": "dias_laborables",
+  "opt.working_days.description": "Días en que se envía la encuesta (en la web puedes elegir cualquiera)"
 }
