@@ -89,9 +89,10 @@ func noteModal(l *i18n.Locale, id surveyID) *discordgo.InteractionResponseData {
 }
 
 // Discord limits: 4096 characters in an embed description and 6000 in the whole message. The
-// comments get a budget well under that, so a busy server's report still sends.
+// comments and kudos get budgets well under that, so a busy server's report still sends.
 const (
-	commentBudget = 3500
+	kudosMax      = 150 // characters of each kudos shown; there are at most 5
+	commentBudget = 2700
 	commentMax    = 300
 	maxComments   = 20 // more than this is a wall of text; the rest are counted
 )
@@ -113,7 +114,7 @@ func reportMessage(l *i18n.Locale, g api.Guild, r api.Report) *discordgo.Message
 	} else {
 		embed.Description = textSummary(l, r)
 	}
-	embed.Description += comments(l, r.Messages)
+	embed.Description += kudosSection(l, r.Kudos) + comments(l, r.Messages)
 	return msg
 }
 
@@ -147,6 +148,25 @@ func comments(l *i18n.Locale, msgs []api.ReportMsg) string {
 			break
 		}
 		b.WriteString(entry)
+	}
+	return b.String()
+}
+
+// kudosSection counts the period's kudos and quotes the latest. Kudos are public, so they keep
+// their names even in anonymous servers.
+func kudosSection(l *i18n.Locale, k api.KudosSummary) string {
+	if k.Count == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("\n\n### 🙌 " + l.T("report.kudos") + "\n")
+	b.WriteString(l.T("report.kudos_summary", "count", k.Count, "people", k.Receivers) + "\n")
+	for _, h := range k.Highlights {
+		fmt.Fprintf(&b, "%s\n-# %s → %s · %s\n", quote(truncate(h.Message, kudosMax)),
+			h.FromUsername, h.ToUsername, dayLabel(l, h.Day))
+	}
+	if more := k.Count - len(k.Highlights); more > 0 {
+		b.WriteString("-# " + l.T("report.more_kudos", "n", more) + "\n")
 	}
 	return b.String()
 }

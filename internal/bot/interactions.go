@@ -21,6 +21,7 @@ const (
 	cmdResume = "resume"
 	cmdReport = "report"
 	cmdConfig = "config"
+	cmdKudos  = "kudos"
 
 	optAnonymous = "anonymous"
 	optHour      = "hour"
@@ -29,6 +30,9 @@ const (
 	optAdmin     = "admin"
 	optLanguage  = "language"
 	optPeriod    = "period"
+	optUser      = "user"
+	optMessage   = "message"
+	optKudosChan = "kudos_channel"
 
 	periodLast    = "last"
 	periodCurrent = "current"
@@ -37,6 +41,7 @@ const (
 func commands() []*discordgo.ApplicationCommand {
 	no := false
 	minHour := 0.0
+	one := 1
 	en := i18n.Get(i18n.Default)
 
 	sub := func(name string, opts ...*discordgo.ApplicationCommandOption) *discordgo.ApplicationCommandOption {
@@ -73,6 +78,12 @@ func commands() []*discordgo.ApplicationCommand {
 			Name: en.T("period." + p), NameLocalizations: *localized("period." + p), Value: p,
 		})
 	}
+	kudosUser := opt(discordgo.ApplicationCommandOptionUser, optUser)
+	kudosUser.Required = true
+	kudosMessage := opt(discordgo.ApplicationCommandOptionString, optMessage)
+	kudosMessage.Required, kudosMessage.MinLength, kudosMessage.MaxLength = true, &one, kudosMaxLength
+	kudosChannel := opt(discordgo.ApplicationCommandOptionChannel, optKudosChan)
+	kudosChannel.ChannelTypes = []discordgo.ChannelType{discordgo.ChannelTypeGuildText, discordgo.ChannelTypeGuildNews}
 	language := opt(discordgo.ApplicationCommandOptionString, optLanguage)
 	for _, code := range i18n.Codes() {
 		language.Choices = append(language.Choices, &discordgo.ApplicationCommandOptionChoice{
@@ -90,6 +101,7 @@ func commands() []*discordgo.ApplicationCommand {
 			sub(cmdPause),
 			sub(cmdResume),
 			sub(cmdReport, period),
+			sub(cmdKudos, kudosUser, kudosMessage),
 			sub(cmdConfig,
 				opt(discordgo.ApplicationCommandOptionBoolean, optAnonymous),
 				hour,
@@ -97,6 +109,7 @@ func commands() []*discordgo.ApplicationCommand {
 				frequency,
 				language,
 				opt(discordgo.ApplicationCommandOptionUser, optAdmin),
+				kudosChannel,
 			),
 		},
 	}}
@@ -249,6 +262,8 @@ func (b *Bot) handleCommand(ctx context.Context, i *discordgo.InteractionCreate)
 		b.cmdConfig(ctx, i, l, user, sub.Options)
 	case cmdReport:
 		b.cmdReport(ctx, i, l, user, sub.Options)
+	case cmdKudos:
+		b.cmdKudos(ctx, i, l, user, sub.Options)
 	}
 }
 
@@ -273,7 +288,7 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name,
-		"participants", len(members), "you", you))
+		"participants", len(members), "you", you)+"\n"+kudosChannelLine(l, g))
 }
 
 func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
@@ -301,6 +316,9 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 		case optAdmin:
 			v := o.UserValue(nil).ID
 			p.AdminDiscordID = &v
+		case optKudosChan:
+			v := o.ChannelValue(nil).ID
+			p.KudosChannelID = &v
 		}
 	}
 	g, err := b.api.UpdateGuild(ctx, i.GuildID, p)
@@ -314,7 +332,7 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 	b.ephemeral(i, l.T("config.saved",
 		"hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
-		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name))
+		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name)+"\n"+kudosChannelLine(l, g))
 }
 
 func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {

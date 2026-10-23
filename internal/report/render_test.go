@@ -22,6 +22,7 @@ func sample(days int, skip map[int]bool) api.Report {
 		Anonymous:      true,
 		Distribution:   map[string]int{"1": 1, "2": 3, "3": 8, "4": 12, "5": 5},
 		Messages:       []api.ReportMsg{{Day: "2026-10-19", Mood: 4, Message: "bien"}},
+		Kudos:          api.KudosSummary{Count: 4, Givers: 3, Receivers: 2},
 	}
 	total := 0
 	for i := 0; i < days; i++ {
