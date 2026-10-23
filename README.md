@@ -52,6 +52,12 @@ Every language is one file in [`internal/i18n/locales`](internal/i18n/locales), 
 No code changes are needed; the new language appears in `/happyx config` on the next deploy.
 Discord allows at most 25 choices, so past 25 languages the option will need autocomplete instead.
 
+## Previewing messages
+
+`go run ./cmd/preview -lang es -out preview.html` writes a page that shows every message the bot
+sends (survey, kudos, replies, report with its image) styled like Discord, built with the bot's own
+code and sample data. No Discord server or API needed.
+
 ## Setting up the Discord application
 
 1. Create an application at https://discord.com/developers/applications and add a **Bot**.
