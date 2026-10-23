@@ -32,10 +32,13 @@ const (
 func Previews(code string) []Preview {
 	l := i18n.Get(code)
 	g := api.Guild{DiscordID: PreviewGuildID, Name: "Equipo Demo", AdminDiscordID: PreviewAdminID, Anonymous: true,
-		Timezone: "Europe/Madrid", SurveyHour: 13, ReportFrequency: "weekly", Language: code, KudosChannelID: PreviewChannelID}
+		Timezone: "Europe/Madrid", SurveyHour: 13, ReportFrequency: "weekly", Language: code, KudosChannelID: PreviewChannelID,
+		WorkingDays: presetDays("mon_fri")}
 	b := &Bot{}
 	public, no := g, false
 	public.Anonymous = false
+	sunToThu := g
+	sunToThu.WorkingDays = presetDays("sun_thu")
 	day := "2026-10-23"
 	kudosMsg := "Gracias por echarme un cable con el despliegue del viernes, sin ti no llegábamos 🚀"
 	link := "https://discord.com/channels/" + PreviewGuildID + "/" + PreviewChannelID + "/1"
@@ -60,9 +63,11 @@ func Previews(code string) []Preview {
 		{Title: "Kudos to a bot", Channel: "#general", Command: "/happyx kudos", Ephemeral: true, Msg: text(l.T("kudos.no_bots"))},
 		{Title: "Kudos daily limit", Channel: "#general", Command: "/happyx kudos", Ephemeral: true, Msg: text(l.T("kudos.too_many"))},
 		{Title: "Status", Channel: "#general", Command: "/happyx status", Ephemeral: true, Msg: text(l.T("status.text",
-			"hour", "13", "timezone", g.Timezone, "frequency", l.T("freq.weekly"), "admin", "<@"+PreviewAdminID+">",
+			"days", workingDaysText(l, g.WorkingDays), "hour", "13", "timezone", g.Timezone, "frequency", l.T("freq.weekly"), "admin", "<@"+PreviewAdminID+">",
 			"anonymous", yesNo(l, true), "language", l.Name, "participants", 12, "you", l.T("status.receiving")) +
 			"\n" + kudosChannelLine(l, g))},
+		{Title: "Changing the working days", Channel: "#general", Command: "/happyx config working_days:" + l.T("days.sun_thu"), Ephemeral: true,
+			Msg: text(configSaved(l, sunToThu, api.GuildPatch{WorkingDays: sunToThu.WorkingDays}))},
 		{Title: "Turning anonymity off", Channel: "#general", Command: "/happyx config anonymous:False", Ephemeral: true,
 			Msg: text(configSaved(l, public, api.GuildPatch{Anonymous: &no}))},
 		{Title: "Pause", Channel: "#general", Command: "/happyx pause", Ephemeral: true, Msg: text(l.T("pause.done", "resume_cmd", b.resumeMention()))},
@@ -84,12 +89,9 @@ func previewReport() api.Report {
 			{Day: "2026-10-21", FromUsername: "bea", ToUsername: "ana", Message: "Por organizar la retro y traer café ☕"},
 		}},
 	}
-	for i, avg := range []float64{3.2, 2.9, 3.8, 4.3, 4.1, 0, 0} {
-		d := api.ReportDay{Day: fmt.Sprintf("2026-10-%d", 19+i), Average: avg}
-		if avg > 0 {
-			d.Responses = 8
-		}
-		r.Days = append(r.Days, d)
+	// Monday to Friday: the API leaves out non-working days nobody answered on.
+	for i, avg := range []float64{3.2, 2.9, 3.8, 4.3, 4.1} {
+		r.Days = append(r.Days, api.ReportDay{Day: fmt.Sprintf("2026-10-%d", 19+i), Average: avg, Responses: 8})
 	}
 	return r
 }

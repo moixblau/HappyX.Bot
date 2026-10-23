@@ -165,7 +165,7 @@ func (b *Bot) tick(ctx context.Context) {
 	}
 	now := b.now()
 	for _, g := range guilds {
-		st := schedule.Settings{Timezone: g.Timezone, SurveyHour: g.SurveyHour, ReportFrequency: g.ReportFrequency}
+		st := schedule.Settings{Timezone: g.Timezone, SurveyHour: g.SurveyHour, ReportFrequency: g.ReportFrequency, WorkingDays: g.WorkingDays}
 		if day, due := schedule.SurveyDue(st, now); due {
 			b.dispatch(ctx, g, "survey", day, func() error { return b.sendSurvey(ctx, g, day) })
 		}

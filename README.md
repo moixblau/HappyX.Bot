@@ -9,7 +9,8 @@ report. One bot serves any number of servers; their data is kept apart by
 
 - **Joining a server** registers it in the API with the server owner as admin, and registers every
   human member (bots are ignored). New members are added as they join; members who leave are removed.
-- **Survey**: from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
+- **Survey**: on the server's working days (Monday to Friday by default; `/happyx config working_days`
+  offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
   five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
@@ -32,7 +33,7 @@ report. One bot serves any number of servers; their data is kept apart by
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
 | `/happyx kudos` | everyone | `user`, `message` (≤300): publicly thank a teammate |
-| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel` |
+| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel`, `working_days` |
 | `/happyx report` | admin | see the last completed period's report now, or the one in progress with `period:current` |
 
 Discord shows these names translated for users whose client is in a supported language.
