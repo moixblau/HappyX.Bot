@@ -49,7 +49,7 @@
   "stop.done": "Pronto, você não vai mais receber a pesquisa deste servidor. Se mudar de ideia, use {resume_cmd} no servidor.",
   "config.saved": "Configurações salvas: pesquisa {days} às {hour}:00 ({timezone}), relatório {frequency} enviado para {admin}, anônimo: {anonymous}, idioma: {language}.",
   "config.now_public": "A partir de agora o administrador pode ver quem responde. As respostas dadas enquanto o servidor era anônimo continuam anônimas.",
-  "admin.only": "Só o admin do HappyX ({admin}) pode fazer isso.",
+  "admin.only": "Você não tem permissão do HappyX para isso. Peça ao admin do HappyX ({admin}) ou a um administrador do servidor no painel.",
   "error.generic": "Algo deu errado, tente de novo mais tarde. 😖",
   "error.not_member": "Você não participa da pesquisa deste servidor. Use {resume_cmd} lá para participar.",
   "error.inactive": "O HappyX não está ativo neste servidor.",

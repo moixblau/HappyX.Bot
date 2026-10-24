@@ -49,7 +49,7 @@
   "stop.done": "C'est fait, tu ne recevras plus le sondage de ce serveur. Si tu changes d'avis, utilise {resume_cmd} sur le serveur.",
   "config.saved": "Paramètres enregistrés : sondage {days} à {hour}:00 ({timezone}), rapport {frequency} envoyé à {admin}, anonyme : {anonymous}, langue : {language}.",
   "config.now_public": "Désormais, l'admin peut voir qui répond. Les réponses données quand le serveur était anonyme restent anonymes.",
-  "admin.only": "Seul l'admin HappyX ({admin}) peut faire ça.",
+  "admin.only": "Tu n'as pas la permission HappyX pour ça. Demande-la à l'admin HappyX ({admin}) ou à un administrateur du serveur depuis le tableau de bord.",
   "error.generic": "Une erreur s'est produite, réessaie plus tard. 😖",
   "error.not_member": "Tu ne participes pas au sondage de ce serveur. Utilise {resume_cmd} sur ce serveur pour t'inscrire.",
   "error.inactive": "HappyX n'est pas actif sur ce serveur.",

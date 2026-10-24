@@ -49,7 +49,7 @@
   "stop.done": "Erledigt, du bekommst die Umfrage dieses Servers nicht mehr. Wenn du es dir anders überlegst, nutze {resume_cmd} auf dem Server.",
   "config.saved": "Einstellungen gespeichert: Umfrage {days} um {hour}:00 ({timezone}), Bericht {frequency} an {admin}, anonym: {anonymous}, Sprache: {language}.",
   "config.now_public": "Ab jetzt sieht der Admin, wer antwortet. Antworten, die gegeben wurden, als der Server anonym war, bleiben anonym.",
-  "admin.only": "Nur der HappyX-Admin ({admin}) kann das tun.",
+  "admin.only": "Dafür fehlt dir die HappyX-Berechtigung. Bitte den HappyX-Admin ({admin}) oder einen Server-Administrator, sie dir im Dashboard zu geben.",
   "error.generic": "Etwas ist schiefgelaufen, bitte versuche es später noch einmal. 😖",
   "error.not_member": "Du nimmst an der Umfrage dieses Servers nicht teil. Nutze dort {resume_cmd}, um mitzumachen.",
   "error.inactive": "HappyX ist auf diesem Server nicht aktiv.",

@@ -315,7 +315,14 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 }
 
 func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
-	if !b.isAdmin(ctx, i, l, user) {
+	// Choosing who receives the reports is for owners, like giving access on the dashboard.
+	need := api.AccessManage
+	for _, o := range opts {
+		if o.Name == optAdmin {
+			need = api.AccessOwner
+		}
+	}
+	if !b.allowed(ctx, i, l, user, need) {
 		return
 	}
 	var p api.GuildPatch
@@ -377,7 +384,7 @@ func configSaved(l *i18n.Locale, g api.Guild, p api.GuildPatch) string {
 }
 
 func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
-	if !b.isAdmin(ctx, i, l, user) {
+	if !b.allowed(ctx, i, l, user, api.AccessView) {
 		return
 	}
 	g, err := b.api.Guild(ctx, i.GuildID)
@@ -402,18 +409,37 @@ func (b *Bot) cmdReport(ctx context.Context, i *discordgo.InteractionCreate, l *
 	})
 }
 
-// isAdmin checks the caller is the guild's HappyX admin, and answers them if not.
-func (b *Bot) isAdmin(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User) bool {
-	g, err := b.api.Guild(ctx, i.GuildID)
+// allowed checks the caller has at least the need level in HappyX (see api.Access), and
+// answers them if not. The server's owner and its Administrators always have it.
+func (b *Bot) allowed(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, need string) bool {
+	discordAdmin := i.Member != nil && i.Member.Permissions&discordgo.PermissionAdministrator != 0
+	level, err := b.api.Access(ctx, i.GuildID, user.ID, discordAdmin)
 	if err != nil {
 		b.replyError(i, l, err)
 		return false
 	}
-	if g.AdminDiscordID != user.ID {
+	if accessRank(level) < accessRank(need) {
+		g, err := b.api.Guild(ctx, i.GuildID)
+		if err != nil {
+			b.replyError(i, l, err)
+			return false
+		}
 		b.ephemeral(i, l.T("admin.only", "admin", "<@"+g.AdminDiscordID+">"))
 		return false
 	}
 	return true
+}
+
+func accessRank(level string) int {
+	switch level {
+	case api.AccessView:
+		return 1
+	case api.AccessManage:
+		return 2
+	case api.AccessOwner:
+		return 3
+	}
+	return 0
 }
 
 // resumeMention is a clickable /happyx resume, which Discord shows in each user's language.
