@@ -119,9 +119,14 @@ func (b *Bot) sendGameGuess(ctx context.Context, g api.Guild, week string) error
 }
 
 func (b *Bot) dmAll(g api.Guild, members []api.Member, msg *discordgo.MessageSend, what string) error {
+	return b.dmEach(g, members, func(api.Member) *discordgo.MessageSend { return msg }, what)
+}
+
+// dmEach is dmAll with a message built for each member.
+func (b *Bot) dmEach(g api.Guild, members []api.Member, msg func(api.Member) *discordgo.MessageSend, what string) error {
 	failed := 0
 	for _, m := range members {
-		if err := b.dm(m.DiscordID, msg); err != nil {
+		if err := b.dm(m.DiscordID, msg(m)); err != nil {
 			// Usually the user has DMs from server members turned off.
 			b.log.Warn(what+" DM failed", "guild", g.DiscordID, "user", m.DiscordID, "err", err)
 			failed++

@@ -158,6 +158,9 @@ func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 			if err := b.api.SyncMember(ctx, guildID, m.User.ID, m.User.Username, m.Roles); err != nil {
 				return n, err
 			}
+			// Keep them in the session state so the survey can greet them by their server name.
+			m.GuildID = guildID
+			_ = b.dg.State.MemberAdd(m)
 			n++
 		}
 		if len(page) < 1000 {
@@ -289,11 +292,27 @@ func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, se
 }
 
 func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) error {
-	members, err := b.api.Members(ctx, g.DiscordID)
+	list := b.api.Members
+	if strings.Contains(g.SurveyMessage, "user.streak") {
+		list = b.api.MembersWithStreak
+	}
+	members, err := list(ctx, g.DiscordID)
 	if err != nil {
 		return err
 	}
-	return b.dmAll(g, members, surveyMessage(i18n.Get(g.Language), g, day), "survey")
+	l := i18n.Get(g.Language)
+	return b.dmEach(g, members, func(m api.Member) *discordgo.MessageSend {
+		return surveyMessage(l, g, day, surveyRecipient{ID: m.DiscordID, Name: b.displayName(g.DiscordID, m), Streak: m.Streak})
+	}, "survey")
+}
+
+// displayName is the member's name as the server shows it: their server nickname, else their
+// Discord display name, else the username HappyX stored.
+func (b *Bot) displayName(guildID string, m api.Member) string {
+	if dm, err := b.dg.State.Member(guildID, m.DiscordID); err == nil && dm.User != nil {
+		return dm.DisplayName()
+	}
+	return m.Username
 }
 
 func (b *Bot) sendReport(ctx context.Context, g api.Guild, from, to string) error {
