@@ -132,6 +132,43 @@ func TestGameIDs(t *testing.T) {
 	}
 }
 
+func TestGameProposals(t *testing.T) {
+	l := i18n.Get("es")
+	g := api.Guild{DiscordID: "100000000000000001", Name: "Equipo"}
+	r := api.GameRound{Week: "2026-10-19", Question: "¿Tu olor favorito?", Answers: 5}
+	buttons := func(m *discordgo.MessageSend) []discordgo.Button {
+		var out []discordgo.Button
+		for _, c := range m.Components[0].(discordgo.ActionsRow).Components {
+			out = append(out, c.(discordgo.Button))
+		}
+		return out
+	}
+	// Thursday: guess on the web, and propose next week's question from Discord.
+	bs := buttons(gameGuessMessage(l, g, r, "https://web/#/game/1"))
+	if len(bs) != 2 || bs[0].URL == "" {
+		t.Fatalf("guess DM buttons: %+v", bs)
+	}
+	id, ok := parseGameID(bs[1].CustomID)
+	if !ok || id.Action != gamePropose || id.GuildID != g.DiscordID {
+		t.Fatalf("propose button: %q", bs[1].CustomID)
+	}
+	modal := gameModal(l, id)
+	if mid, ok := parseGameID(modal.CustomID); !ok || mid.Action != gameProposeModal || modal.Title != l.T("game.propose_modal_title") {
+		t.Fatalf("propose modal: %+v", modal)
+	}
+	// Without enough answers (or a dashboard) the DM only asks for a question.
+	if m := gameGuessMessage(l, g, r, ""); len(buttons(m)) != 1 || strings.Contains(m.Content, r.Question) {
+		t.Fatalf("proposal-only DM: %+v", m)
+	}
+	// A drawn proposal is announced as the team's, without saying whose.
+	if m := gameQuestionMessage(l, g, api.GameRound{Week: r.Week, Question: r.Question, Proposed: true}, ""); !strings.Contains(m.Content, l.T("game.proposed")) {
+		t.Fatalf("proposed question DM: %q", m.Content)
+	}
+	if m := gameQuestionMessage(l, g, r, ""); strings.Contains(m.Content, l.T("game.proposed")) {
+		t.Fatalf("bot's question announced as proposed: %q", m.Content)
+	}
+}
+
 func TestGameQuestionRotates(t *testing.T) {
 	l := i18n.Get("es")
 	seen := map[string]bool{}

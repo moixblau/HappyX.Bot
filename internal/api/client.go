@@ -230,6 +230,8 @@ type GameRound struct {
 	LastDay        string `json:"last_day"`
 	Answers        int    `json:"answers"`
 	MinAnswers     int    `json:"min_answers"`
+	// Proposed is set when the question was drawn from the members' proposals.
+	Proposed bool `json:"proposed"`
 }
 
 // API messages for the game's 409s.
@@ -258,6 +260,14 @@ func (c *Client) GameRound(ctx context.Context, guildID, week string) (GameRound
 func (c *Client) AnswerGame(ctx context.Context, guildID, week, userID, answer string) error {
 	return c.do(ctx, http.MethodPut, gameRoundPath(guildID, week)+"/answers/"+url.PathEscape(userID),
 		map[string]string{"answer": answer}, nil)
+}
+
+// ProposeQuestion proposes userID's question for next Monday's draw, replacing an earlier one.
+// It fails with ErrForbidden for paused members and ErrConflict from Monday to Wednesday or
+// when games are off.
+func (c *Client) ProposeQuestion(ctx context.Context, guildID, userID, question string) error {
+	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/game/proposals/"+url.PathEscape(userID),
+		map[string]string{"question": question}, nil)
 }
 
 func gameRoundPath(guildID, week string) string {

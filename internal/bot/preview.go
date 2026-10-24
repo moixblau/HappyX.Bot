@@ -81,9 +81,13 @@ func Previews(code string) []Preview {
 		{Title: "Weekly report", Channel: "DM", Msg: reportMessage(l, g, previewReport())},
 		{Title: "Turning the game on", Channel: "#general", Command: "/happyx config games:True", Ephemeral: true,
 			Msg: text(configSaved(l, games, api.GuildPatch{GamesEnabled: &yes}))},
-		{Title: "«Who's who?» question (Monday)", Channel: "DM", Msg: gameQuestionMessage(l, g, question, week, gameLink)},
+		{Title: "«Who's who?» question (Monday)", Channel: "DM", Msg: gameQuestionMessage(l, g, api.GameRound{Week: week, Question: question}, gameLink)},
+		{Title: "A question the team proposed (Monday)", Channel: "DM", Msg: gameQuestionMessage(l, g, api.GameRound{Week: week, Question: question, Proposed: true}, gameLink)},
 		{Title: "After answering the game", Channel: "DM", Msg: data(gameAnsweredMessage(l, g, question, week, "Astronauta, y luego bombera 🚒", gameLink))},
 		{Title: "Guessing is open (Thursday)", Channel: "DM", Msg: gameGuessMessage(l, g, api.GameRound{Week: week, Question: question, Answers: 7}, gameLink)},
+		{Title: "Too few answers to guess (Thursday)", Channel: "DM", Msg: gameGuessMessage(l, g, api.GameRound{Week: week, Question: question, Answers: 2}, "")},
+		{Title: "After proposing a question", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.proposed_ok", "question", "¿Cuál fue tu primer concierto?"))},
+		{Title: "Proposing before Thursday", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.propose_closed"))},
 		{Title: "Answering after Wednesday", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.closed"))},
 	}
 }

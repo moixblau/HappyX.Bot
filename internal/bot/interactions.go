@@ -149,7 +149,7 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	case discordgo.InteractionApplicationCommand:
 		b.handleCommand(ctx, i)
 	case discordgo.InteractionMessageComponent:
-		if id, ok := parseGameID(i.MessageComponentData().CustomID); ok && id.Action == gameAnswer {
+		if id, ok := parseGameID(i.MessageComponentData().CustomID); ok && (id.Action == gameAnswer || id.Action == gamePropose) {
 			b.handleGameButton(ctx, i, id)
 			return
 		}
@@ -158,6 +158,10 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		data := i.ModalSubmitData()
 		if id, ok := parseGameID(data.CustomID); ok && id.Action == gameAnswerModal {
 			b.handleGameModal(ctx, i, id, data)
+			return
+		}
+		if id, ok := parseGameID(data.CustomID); ok && id.Action == gameProposeModal {
+			b.handleProposeModal(ctx, i, id, data)
 			return
 		}
 		b.handleNoteModal(ctx, i)
