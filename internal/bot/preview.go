@@ -46,6 +46,13 @@ func Previews(code string) []Preview {
 	answered := answeredMessage(l, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "")
 	commented := answeredMessage(l, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Semana intensa pero buen ambiente")
 
+	week := "2026-10-19"
+	question := gameQuestion(l, week)
+	gameLink := "https://happyx.example.com/#/game/" + PreviewGuildID
+	games := g
+	games.GamesEnabled = true
+	yes := true
+
 	text := func(s string) *discordgo.MessageSend { return &discordgo.MessageSend{Content: s} }
 	data := func(d *discordgo.InteractionResponseData) *discordgo.MessageSend {
 		return &discordgo.MessageSend{Content: d.Content, Embeds: d.Embeds, Components: d.Components}
@@ -72,6 +79,16 @@ func Previews(code string) []Preview {
 			Msg: text(configSaved(l, public, api.GuildPatch{Anonymous: &no}))},
 		{Title: "Pause", Channel: "#general", Command: "/happyx pause", Ephemeral: true, Msg: text(l.T("pause.done", "resume_cmd", b.resumeMention()))},
 		{Title: "Weekly report", Channel: "DM", Msg: reportMessage(l, g, previewReport())},
+		{Title: "Turning the game on", Channel: "#general", Command: "/happyx config games:True", Ephemeral: true,
+			Msg: text(configSaved(l, games, api.GuildPatch{GamesEnabled: &yes}))},
+		{Title: "«Who's who?» question (Monday)", Channel: "DM", Msg: gameQuestionMessage(l, g, api.GameRound{Week: week, Question: question}, gameLink)},
+		{Title: "A question the team proposed (Monday)", Channel: "DM", Msg: gameQuestionMessage(l, g, api.GameRound{Week: week, Question: question, Proposed: true}, gameLink)},
+		{Title: "After answering the game", Channel: "DM", Msg: data(gameAnsweredMessage(l, g, question, week, "Astronauta, y luego bombera 🚒", gameLink))},
+		{Title: "Guessing is open (Thursday)", Channel: "DM", Msg: gameGuessMessage(l, g, api.GameRound{Week: week, Question: question, Answers: 7}, gameLink)},
+		{Title: "Too few answers to guess (Thursday)", Channel: "DM", Msg: gameGuessMessage(l, g, api.GameRound{Week: week, Question: question, Answers: 2}, "")},
+		{Title: "After proposing a question", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.proposed_ok", "question", "¿Cuál fue tu primer concierto?"))},
+		{Title: "Proposing before Thursday", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.propose_closed"))},
+		{Title: "Answering after Wednesday", Channel: "DM", Ephemeral: true, Msg: text(l.T("game.closed"))},
 	}
 }
 
