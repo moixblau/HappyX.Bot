@@ -157,19 +157,15 @@ func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 				continue
 			}
 			batch = append(batch, api.MemberSync{ID: m.User.ID, Username: m.User.Username, RoleIDs: m.Roles})
+			// Keep them in the session state so the survey can greet them by their server name,
+			// even if the API sync below fails.
+			m.GuildID = guildID
+			_ = b.dg.State.MemberAdd(m)
 		}
 		if err := b.sendMembers(ctx, guildID, batch); err != nil {
 			return n, err
 		}
-		for _, m := range page {
-			if m.User == nil || m.User.Bot {
-				continue
-			}
-			// Keep them in the session state so the survey can greet them by their server name.
-			m.GuildID = guildID
-			_ = b.dg.State.MemberAdd(m)
-			n++
-		}
+		n += len(batch)
 		if len(page) < 1000 {
 			return n, nil
 		}
