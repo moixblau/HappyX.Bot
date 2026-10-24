@@ -142,8 +142,8 @@ func (b *Bot) sendRoles(ctx context.Context, guildID string, roles []*discordgo.
 	}
 }
 
-// syncMembers registers every human member with their roles. It doesn't change anyone's
-// opt-in state.
+// syncMembers registers every human member with their roles, a page of Discord's member list
+// per API request. It doesn't change anyone's opt-in state.
 func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 	n, after := 0, ""
 	for {
@@ -151,12 +151,19 @@ func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 		if err != nil {
 			return n, err
 		}
+		batch := make([]api.MemberSync, 0, len(page))
 		for _, m := range page {
 			if m.User == nil || m.User.Bot {
 				continue
 			}
-			if err := b.api.SyncMember(ctx, guildID, m.User.ID, m.User.Username, m.Roles); err != nil {
-				return n, err
+			batch = append(batch, api.MemberSync{ID: m.User.ID, Username: m.User.Username, RoleIDs: m.Roles})
+		}
+		if err := b.sendMembers(ctx, guildID, batch); err != nil {
+			return n, err
+		}
+		for _, m := range page {
+			if m.User == nil || m.User.Bot {
+				continue
 			}
 			// Keep them in the session state so the survey can greet them by their server name.
 			m.GuildID = guildID
@@ -168,6 +175,25 @@ func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 		}
 		after = page[len(page)-1].User.ID
 	}
+}
+
+// sendMembers syncs a page of members in one request, or one by one when the API is older
+// than the bulk endpoint.
+func (b *Bot) sendMembers(ctx context.Context, guildID string, ms []api.MemberSync) error {
+	if len(ms) == 0 {
+		return nil
+	}
+	err := b.api.SyncMembers(ctx, guildID, ms)
+	var apiErr *api.Error
+	if !errors.As(err, &apiErr) || apiErr.Status != http.StatusMethodNotAllowed {
+		return err
+	}
+	for _, m := range ms {
+		if err := b.api.SyncMember(ctx, guildID, m.ID, m.Username, m.RoleIDs); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (b *Bot) onGuildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
