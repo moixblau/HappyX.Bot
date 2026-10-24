@@ -199,6 +199,24 @@ func (c *Client) SyncMember(ctx context.Context, guildID, userID, username strin
 	return c.do(ctx, http.MethodPut, memberPath(guildID, userID), map[string]any{"username": username, "role_ids": roleIDs}, nil)
 }
 
+// MemberSync is one member in a bulk SyncMembers call.
+type MemberSync struct {
+	ID       string   `json:"discord_user_id"`
+	Username string   `json:"username"`
+	RoleIDs  []string `json:"role_ids"`
+}
+
+// SyncMembers registers up to 1000 members or refreshes their usernames and roles in one
+// request, keeping everyone's opt-in state.
+func (c *Client) SyncMembers(ctx context.Context, guildID string, ms []MemberSync) error {
+	for i := range ms {
+		if ms[i].RoleIDs == nil {
+			ms[i].RoleIDs = []string{}
+		}
+	}
+	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/members", map[string]any{"members": ms}, nil)
+}
+
 func (c *Client) RemoveMember(ctx context.Context, guildID, userID string) error {
 	return c.do(ctx, http.MethodDelete, memberPath(guildID, userID), nil, nil)
 }
