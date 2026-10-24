@@ -19,6 +19,9 @@ report. One bot serves any number of servers; their data is kept apart by
   offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
   five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
+  Admins can write their own survey text on the web (variables like `{{user.name}}`, `{{user.streak}}`
+  or `{{date}}` are filled in per person). It goes out as written; the anonymity notice and the
+  buttons are always added below it, and its mentions never ping anyone.
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
 - **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card is posted

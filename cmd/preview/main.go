@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/base64"
 	"flag"
 	"fmt"
@@ -21,6 +22,11 @@ import (
 	"github.com/moixblau/HappyX.Bot/internal/bot"
 	"github.com/moixblau/HappyX.Bot/internal/i18n"
 )
+
+// logo is the bot's avatar, the same drawing the web uses (HappyX.Web src/logo.svg).
+//
+//go:embed logo.svg
+var logo []byte
 
 // names shows the sample IDs as Discord would.
 var names = map[string]string{
@@ -44,7 +50,7 @@ func main() {
 		if p.Command != "" {
 			fmt.Fprintf(&b, "<div class=\"reply-to\">↱ <b>ana</b> used <span class=\"cmd\">%s</span></div>\n", html.EscapeString(p.Command))
 		}
-		b.WriteString(`<div class="msg"><div class="avatar">💙</div><div class="body">`)
+		fmt.Fprintf(&b, `<div class="msg"><img class="avatar" alt="" src="data:image/svg+xml;base64,%s"><div class="body">`, base64.StdEncoding.EncodeToString(logo))
 		b.WriteString(`<div class="author">HappyX <span class="tag">APP</span> <span class="time">Today at 13:00</span></div>`)
 		writeMessage(&b, p.Msg)
 		if p.Ephemeral {
@@ -176,7 +182,7 @@ h1{font-size:20px;color:#f2f3f5}
 section{padding:16px 0;border-top:1px solid #3f4147}
 .scene{color:#949ba4;font-size:12px;text-transform:uppercase;font-weight:700;margin-bottom:8px}.scene span{background:#2b2d31;border-radius:4px;padding:1px 6px;text-transform:none;font-weight:500}
 .reply-to{color:#949ba4;font-size:14px;margin-left:56px}.cmd{color:#c9cdfb}
-.msg{display:flex;gap:16px}.avatar{width:40px;height:40px;border-radius:50%;background:#5865f2;display:flex;align-items:center;justify-content:center;flex:none;font-size:20px}
+.msg{display:flex;gap:16px}.avatar{width:40px;height:40px;border-radius:50%;flex:none}
 .body{min-width:0;flex:1}.author{color:#f2f3f5;font-weight:500}.tag{background:#5865f2;color:#fff;font-size:10px;border-radius:3px;padding:1px 4px;vertical-align:2px}.time{color:#949ba4;font-size:12px;font-weight:400}
 .content div{min-height:1em}
 blockquote{margin:2px 0;padding:0 0 0 12px;border-left:4px solid #4e5058}

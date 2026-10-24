@@ -3,6 +3,8 @@ package bot
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,7 +25,14 @@ func moodEmoji(m int) string {
 	return moodEmojis[m-1]
 }
 
-func surveyMessage(l *i18n.Locale, g api.Guild, day string) *discordgo.MessageSend {
+// surveyRecipient is who a survey DM goes to, for the custom message's {{user.*}} variables.
+type surveyRecipient struct {
+	ID     string
+	Name   string // their name in the server
+	Streak int    // days in a row they answered
+}
+
+func surveyMessage(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) *discordgo.MessageSend {
 	buttons := make([]discordgo.MessageComponent, 0, len(moodEmojis))
 	for i, emoji := range moodEmojis {
 		buttons = append(buttons, discordgo.Button{
@@ -38,7 +47,9 @@ func surveyMessage(l *i18n.Locale, g api.Guild, day string) *discordgo.MessageSe
 		privacy = l.T("survey.named")
 	}
 	return &discordgo.MessageSend{
-		Content: l.T("survey.question", "guild", g.Name) + "\n" + privacy,
+		Content: surveyText(l, g, day, to) + "\n" + privacy,
+		// A custom message may hold @everyone or role mentions; they're shown but never ping.
+		AllowedMentions: &discordgo.MessageAllowedMentions{Parse: []discordgo.AllowedMentionType{}},
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: buttons},
 			discordgo.ActionsRow{Components: []discordgo.MessageComponent{
@@ -51,6 +62,41 @@ func surveyMessage(l *i18n.Locale, g api.Guild, day string) *discordgo.MessageSe
 			}},
 		},
 	}
+}
+
+var surveyVar = regexp.MustCompile(`\{\{\s*([a-z.]+)\s*\}\}`)
+
+// surveyText is the survey's question: the admin's own message with its variables filled in for
+// this person, as written in whatever language they wrote it, or the default text when there is
+// none. The API only accepts known variables, but an unknown one is left as written.
+func surveyText(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) string {
+	if strings.TrimSpace(g.SurveyMessage) == "" {
+		return l.T("survey.question", "guild", g.Name)
+	}
+	d, err := time.Parse("2006-01-02", day)
+	if err != nil {
+		d = time.Now()
+	}
+	vars := map[string]string{
+		"user.name":    to.Name,
+		"user.mention": "<@" + to.ID + ">",
+		"user.streak":  strconv.Itoa(to.Streak),
+		"guild.name":   g.Name,
+		"date":         longDate(l, d),
+		"weekday":      l.List("date.weekdays_long")[d.Weekday()],
+	}
+	return surveyVar.ReplaceAllStringFunc(g.SurveyMessage, func(m string) string {
+		if v, ok := vars[surveyVar.FindStringSubmatch(m)[1]]; ok {
+			return v
+		}
+		return m
+	})
+}
+
+// longDate is d in full, like «viernes, 24 de octubre».
+func longDate(l *i18n.Locale, d time.Time) string {
+	return l.T("date.long", "weekday", l.List("date.weekdays_long")[d.Weekday()], "day", d.Day(),
+		"month", l.List("date.months_long")[d.Month()-1])
 }
 
 // answeredMessage replaces the survey once answered, offering to add a comment.
