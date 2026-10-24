@@ -85,6 +85,18 @@ func TestClientAgainstAPI(t *testing.T) {
 	if err := c.SyncRoles(ctx, g, []Role{{ID: "400000000000000077", Name: "Staff", Color: 0x3498db, Position: 1}}); err != nil {
 		t.Fatal(err)
 	}
+	if err := c.SyncMembers(ctx, g, []MemberSync{{ID: u, Username: "tester"}, {ID: u2, Username: "tester2", RoleIDs: []string{"400000000000000077"}}}); err != nil {
+		t.Fatal(err)
+	}
+	if ms, err := c.Members(ctx, g); err != nil {
+		t.Fatal(err)
+	} else {
+		for _, m := range ms {
+			if m.DiscordID == u {
+				t.Fatal("bulk sync re-subscribed a member who opted out")
+			}
+		}
+	}
 	if err := c.SyncMember(ctx, g, u2, "tester2", []string{"400000000000000077"}); err != nil {
 		t.Fatal(err)
 	}
