@@ -18,6 +18,8 @@ var (
 	ErrConflict  = errors.New("conflict")
 	ErrForbidden = errors.New("forbidden")
 	ErrTooMany   = errors.New("too many requests")
+	// ErrGone means the server was deleted from HappyX and the bot must leave it.
+	ErrGone = errors.New("gone")
 )
 
 // Error is a non-2xx answer from the API.
@@ -38,6 +40,8 @@ func (e *Error) Is(target error) bool {
 		return e.Status == http.StatusForbidden
 	case ErrTooMany:
 		return e.Status == http.StatusTooManyRequests
+	case ErrGone:
+		return e.Status == http.StatusGone
 	}
 	return false
 }
@@ -158,6 +162,18 @@ func (c *Client) UpdateGuild(ctx context.Context, id string, p GuildPatch) (Guil
 
 func (c *Client) RemoveGuild(ctx context.Context, id string) error {
 	return c.do(ctx, http.MethodDelete, "/v1/guilds/"+url.PathEscape(id), nil, nil)
+}
+
+// Removals lists the servers deleted from HappyX on the dashboard that the bot must leave.
+func (c *Client) Removals(ctx context.Context) ([]string, error) {
+	var ids []string
+	err := c.do(ctx, http.MethodGet, "/v1/removals", nil, &ids)
+	return ids, err
+}
+
+// DoneRemoving tells the API the bot has left a deleted server.
+func (c *Client) DoneRemoving(ctx context.Context, id string) error {
+	return c.do(ctx, http.MethodDelete, "/v1/removals/"+url.PathEscape(id), nil, nil)
 }
 
 // UpsertMember registers or renames a member. active nil keeps an existing member's

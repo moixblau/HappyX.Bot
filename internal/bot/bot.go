@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -96,7 +97,10 @@ func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	if _, err := b.api.RegisterGuild(ctx, e.ID, e.Name, e.OwnerID); err != nil {
+	if _, err := b.api.RegisterGuild(ctx, e.ID, e.Name, e.OwnerID); errors.Is(err, api.ErrGone) {
+		b.leave(ctx, e.ID) // deleted from HappyX while the bot was offline
+		return
+	} else if err != nil {
 		b.log.Error("register guild", "guild", e.ID, "err", err)
 		return
 	}
@@ -143,6 +147,33 @@ func (b *Bot) onGuildDelete(s *discordgo.Session, e *discordgo.GuildDelete) {
 	b.log.Info("removed from guild", "guild", e.ID)
 }
 
+// leaveRemoved leaves the servers whose admin deleted them from HappyX on the dashboard.
+func (b *Bot) leaveRemoved(ctx context.Context) {
+	ids, err := b.api.Removals(ctx)
+	if err != nil {
+		b.log.Error("list removals", "err", err)
+		return
+	}
+	for _, id := range ids {
+		b.leave(ctx, id)
+	}
+}
+
+// leave makes the bot leave a server deleted from HappyX and tells the API once it's out.
+func (b *Bot) leave(ctx context.Context, guildID string) {
+	err := b.dg.GuildLeave(guildID, discordgo.WithContext(ctx))
+	var re *discordgo.RESTError
+	if err != nil && !(errors.As(err, &re) && re.Response != nil && re.Response.StatusCode == http.StatusNotFound) {
+		b.log.Error("leave deleted guild", "guild", guildID, "err", err)
+		return // retried on the next tick
+	}
+	if err := b.api.DoneRemoving(ctx, guildID); err != nil {
+		b.log.Error("confirm removal", "guild", guildID, "err", err)
+		return
+	}
+	b.log.Info("left guild deleted from HappyX", "guild", guildID)
+}
+
 func (b *Bot) onMemberAdd(s *discordgo.Session, e *discordgo.GuildMemberAdd) {
 	if e.User == nil || e.User.Bot {
 		return
@@ -165,6 +196,7 @@ func (b *Bot) onMemberRemove(s *discordgo.Session, e *discordgo.GuildMemberRemov
 // --- Scheduler ---
 
 func (b *Bot) tick(ctx context.Context) {
+	b.leaveRemoved(ctx)
 	guilds, err := b.api.ActiveGuilds(ctx)
 	if err != nil {
 		b.log.Error("list guilds", "err", err)
