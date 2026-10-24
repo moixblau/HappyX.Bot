@@ -50,7 +50,7 @@
   "stop.done": "Hecho, ya no recibirás la encuesta de este servidor. Si cambias de idea, usa {resume_cmd} en el servidor.",
   "config.saved": "Configuración guardada: encuesta {days} a las {hour}:00 ({timezone}), report {frequency} para {admin}, anónimo: {anonymous}, idioma: {language}.",
   "config.now_public": "A partir de ahora el administrador puede ver quién responde. Las respuestas dadas mientras el servidor era anónimo siguen siendo anónimas.",
-  "admin.only": "Solo el administrador de HappyX ({admin}) puede hacer esto.",
+  "admin.only": "No tienes permiso de HappyX para esto. Pídeselo al administrador de HappyX ({admin}) o a un administrador del servidor desde la web.",
   "error.generic": "Algo ha fallado, inténtalo más tarde. 😖",
   "error.not_member": "No participas en la encuesta de este servidor. Usa {resume_cmd} allí para apuntarte.",
   "error.inactive": "HappyX no está activo en este servidor.",
