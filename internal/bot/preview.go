@@ -40,6 +40,9 @@ func Previews(code string) []Preview {
 	sunToThu := g
 	sunToThu.WorkingDays = presetDays("sun_thu")
 	day := "2026-10-23"
+	ana := surveyRecipient{ID: PreviewAnaID, Name: "Ana", Streak: 5}
+	custom := g
+	custom.SurveyMessage = "👋 ¡Hola {{user.name}}! ¿Cómo te encuentras hoy, {{weekday}}? ({{guild.name}})\nLlevas {{user.streak}} días seguidos respondiendo 🔥"
 	kudosMsg := "Gracias por echarme un cable con el despliegue del viernes, sin ti no llegábamos 🚀"
 	link := "https://discord.com/channels/" + PreviewGuildID + "/" + PreviewChannelID + "/1"
 
@@ -59,7 +62,8 @@ func Previews(code string) []Preview {
 	}
 
 	return []Preview{
-		{Title: "Daily survey", Channel: "DM", Msg: surveyMessage(l, g, day)},
+		{Title: "Daily survey", Channel: "DM", Msg: surveyMessage(l, g, day, ana)},
+		{Title: "Daily survey with the admin's own message", Channel: "DM", Msg: surveyMessage(l, custom, day, ana)},
 		{Title: "After answering", Channel: "DM", Msg: data(answered)},
 		{Title: "After adding a comment", Channel: "DM", Msg: data(commented)},
 		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg)},

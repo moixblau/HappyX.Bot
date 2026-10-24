@@ -68,13 +68,17 @@ type Guild struct {
 	KudosChannelID  string `json:"kudos_channel_id"` // empty: where the command is used
 	GamesEnabled    bool   `json:"games_enabled"`
 	WorkingDays     []int  `json:"working_days"` // ISO days the survey goes out, 1 is Monday
-	Active          bool   `json:"active"`
+	// SurveyMessage is the admin's own survey text with {{placeholders}}; empty means the default.
+	SurveyMessage string `json:"survey_message"`
+	Active        bool   `json:"active"`
 }
 
 type Member struct {
 	DiscordID string `json:"discord_user_id"`
 	Username  string `json:"username"`
 	Active    bool   `json:"active"`
+	// Streak is how many days in a row they answered; only filled by MembersWithStreak.
+	Streak int `json:"streak"`
 }
 
 type GuildPatch struct {
@@ -244,6 +248,13 @@ func (c *Client) Access(ctx context.Context, guildID, userID string, discordAdmi
 func (c *Client) Members(ctx context.Context, guildID string) ([]Member, error) {
 	var ms []Member
 	err := c.do(ctx, http.MethodGet, "/v1/guilds/"+url.PathEscape(guildID)+"/members", nil, &ms)
+	return ms, err
+}
+
+// MembersWithStreak is Members with each member's answering streak, for {{user.streak}}.
+func (c *Client) MembersWithStreak(ctx context.Context, guildID string) ([]Member, error) {
+	var ms []Member
+	err := c.do(ctx, http.MethodGet, "/v1/guilds/"+url.PathEscape(guildID)+"/members?with=streak", nil, &ms)
 	return ms, err
 }
 
