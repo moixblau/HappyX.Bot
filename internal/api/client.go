@@ -186,8 +186,59 @@ func (c *Client) UpsertMember(ctx context.Context, guildID, userID, username str
 	return c.do(ctx, http.MethodPut, memberPath(guildID, userID), body, nil)
 }
 
+// SyncMember registers the member or refreshes their username and Discord roles, keeping their
+// opt-in state.
+func (c *Client) SyncMember(ctx context.Context, guildID, userID, username string, roleIDs []string) error {
+	if roleIDs == nil {
+		roleIDs = []string{}
+	}
+	return c.do(ctx, http.MethodPut, memberPath(guildID, userID), map[string]any{"username": username, "role_ids": roleIDs}, nil)
+}
+
 func (c *Client) RemoveMember(ctx context.Context, guildID, userID string) error {
 	return c.do(ctx, http.MethodDelete, memberPath(guildID, userID), nil, nil)
+}
+
+// MemberLeft tells the API the member left the server, which also ends their dashboard access.
+func (c *Client) MemberLeft(ctx context.Context, guildID, userID string) error {
+	return c.do(ctx, http.MethodDelete, memberPath(guildID, userID)+"?left=true", nil, nil)
+}
+
+type Role struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Color    int    `json:"color"`
+	Position int    `json:"position"`
+}
+
+// SyncRoles replaces the server's roles, which the dashboard offers when giving access.
+func (c *Client) SyncRoles(ctx context.Context, guildID string, roles []Role) error {
+	if roles == nil {
+		roles = []Role{}
+	}
+	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/roles", map[string]any{"roles": roles}, nil)
+}
+
+// Access levels, from least to most.
+const (
+	AccessNone   = "none"
+	AccessView   = "view"   // reports
+	AccessManage = "manage" // reports and settings
+	AccessOwner  = "owner"  // also who has access
+)
+
+// Access returns the member's HappyX level in the server. discordAdmin is true when Discord
+// says they own the server or are an Administrator.
+func (c *Client) Access(ctx context.Context, guildID, userID string, discordAdmin bool) (string, error) {
+	var out struct {
+		Level string `json:"level"`
+	}
+	path := memberPath(guildID, userID) + "/access"
+	if discordAdmin {
+		path += "?discord_admin=true"
+	}
+	err := c.do(ctx, http.MethodGet, path, nil, &out)
+	return out.Level, err
 }
 
 func (c *Client) Members(ctx context.Context, guildID string) ([]Member, error) {

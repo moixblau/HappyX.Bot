@@ -44,7 +44,11 @@ func New(token string, client *api.Client, log *slog.Logger) (*Bot, error) {
 	dg.AddHandler(b.onGuildCreate)
 	dg.AddHandler(b.onGuildDelete)
 	dg.AddHandler(b.onMemberAdd)
+	dg.AddHandler(b.onMemberUpdate)
 	dg.AddHandler(b.onMemberRemove)
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleCreate) { b.syncRoles(context.Background(), e.GuildID) })
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleUpdate) { b.syncRoles(context.Background(), e.GuildID) })
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleDelete) { b.syncRoles(context.Background(), e.GuildID) })
 	dg.AddHandler(b.onInteraction)
 	return b, nil
 }
@@ -104,6 +108,7 @@ func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 		b.log.Error("register guild", "guild", e.ID, "err", err)
 		return
 	}
+	b.sendRoles(ctx, e.ID, e.Roles)
 	n, err := b.syncMembers(ctx, e.ID)
 	if err != nil {
 		b.log.Error("sync members", "guild", e.ID, "err", err)
@@ -112,7 +117,33 @@ func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 	b.log.Info("guild ready", "guild", e.ID, "name", e.Name, "members", n)
 }
 
-// syncMembers registers every human member. It doesn't change anyone's opt-in state.
+// syncRoles sends the server's roles, as the session's state holds them after a role event.
+func (b *Bot) syncRoles(ctx context.Context, guildID string) {
+	g, err := b.dg.State.Guild(guildID)
+	if err != nil {
+		b.log.Error("roles from state", "guild", guildID, "err", err)
+		return
+	}
+	b.sendRoles(ctx, guildID, g.Roles)
+}
+
+// sendRoles gives the API the roles the dashboard can grant access to. @everyone (the guild's
+// own ID) and the roles of bots and integrations are left out.
+func (b *Bot) sendRoles(ctx context.Context, guildID string, roles []*discordgo.Role) {
+	out := make([]api.Role, 0, len(roles))
+	for _, r := range roles {
+		if r.ID == guildID || r.Managed {
+			continue
+		}
+		out = append(out, api.Role{ID: r.ID, Name: r.Name, Color: r.Color, Position: r.Position})
+	}
+	if err := b.api.SyncRoles(ctx, guildID, out); err != nil {
+		b.log.Error("sync roles", "guild", guildID, "err", err)
+	}
+}
+
+// syncMembers registers every human member with their roles. It doesn't change anyone's
+// opt-in state.
 func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 	n, after := 0, ""
 	for {
@@ -124,7 +155,7 @@ func (b *Bot) syncMembers(ctx context.Context, guildID string) (int, error) {
 			if m.User == nil || m.User.Bot {
 				continue
 			}
-			if err := b.api.UpsertMember(ctx, guildID, m.User.ID, m.User.Username, nil); err != nil {
+			if err := b.api.SyncMember(ctx, guildID, m.User.ID, m.User.Username, m.Roles); err != nil {
 				return n, err
 			}
 			n++
@@ -178,9 +209,26 @@ func (b *Bot) onMemberAdd(s *discordgo.Session, e *discordgo.GuildMemberAdd) {
 	if e.User == nil || e.User.Bot {
 		return
 	}
+	ctx := context.Background()
 	yes := true
-	if err := b.api.UpsertMember(context.Background(), e.GuildID, e.User.ID, e.User.Username, &yes); err != nil {
+	if err := b.api.UpsertMember(ctx, e.GuildID, e.User.ID, e.User.Username, &yes); err != nil {
 		b.log.Error("member join", "guild", e.GuildID, "err", err)
+		return
+	}
+	// Someone coming back starts without the roles they had before.
+	if err := b.api.SyncMember(ctx, e.GuildID, e.User.ID, e.User.Username, e.Roles); err != nil {
+		b.log.Error("member roles", "guild", e.GuildID, "err", err)
+	}
+}
+
+// onMemberUpdate keeps a member's roles and username current, so access given to a role on the
+// dashboard follows who has it.
+func (b *Bot) onMemberUpdate(s *discordgo.Session, e *discordgo.GuildMemberUpdate) {
+	if e.Member == nil || e.User == nil || e.User.Bot {
+		return
+	}
+	if err := b.api.SyncMember(context.Background(), e.GuildID, e.User.ID, e.User.Username, e.Roles); err != nil && !errors.Is(err, api.ErrConflict) {
+		b.log.Error("member update", "guild", e.GuildID, "err", err)
 	}
 }
 
@@ -188,7 +236,7 @@ func (b *Bot) onMemberRemove(s *discordgo.Session, e *discordgo.GuildMemberRemov
 	if e.User == nil || e.User.Bot {
 		return
 	}
-	if err := b.api.RemoveMember(context.Background(), e.GuildID, e.User.ID); err != nil && !errors.Is(err, api.ErrNotFound) {
+	if err := b.api.MemberLeft(context.Background(), e.GuildID, e.User.ID); err != nil && !errors.Is(err, api.ErrNotFound) {
 		b.log.Error("member leave", "guild", e.GuildID, "err", err)
 	}
 }

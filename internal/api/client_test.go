@@ -82,6 +82,24 @@ func TestClientAgainstAPI(t *testing.T) {
 		}
 	}
 
+	if err := c.SyncRoles(ctx, g, []Role{{ID: "400000000000000077", Name: "Staff", Color: 0x3498db, Position: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.SyncMember(ctx, g, u2, "tester2", []string{"400000000000000077"}); err != nil {
+		t.Fatal(err)
+	}
+	for user, want := range map[string]string{admin: AccessOwner, u2: AccessNone} {
+		if level, err := c.Access(ctx, g, user, false); err != nil || level != want {
+			t.Fatalf("access of %s: %q %v, want %q", user, level, err, want)
+		}
+	}
+	if level, err := c.Access(ctx, g, u2, true); err != nil || level != AccessOwner {
+		t.Fatalf("Discord administrator: %q %v", level, err)
+	}
+	if err := c.MemberLeft(ctx, g, u2); err != nil {
+		t.Fatal(err)
+	}
+
 	ids, err := c.Removals(ctx)
 	if err != nil {
 		t.Fatal(err)
