@@ -33,6 +33,7 @@ const (
 	optUser      = "user"
 	optMessage   = "message"
 	optKudosChan = "kudos_channel"
+	optGames     = "games"
 	optWorkDays  = "working_days"
 
 	periodLast    = "last"
@@ -117,6 +118,7 @@ func commands() []*discordgo.ApplicationCommand {
 				language,
 				opt(discordgo.ApplicationCommandOptionUser, optAdmin),
 				kudosChannel,
+				opt(discordgo.ApplicationCommandOptionBoolean, optGames),
 				workingDays,
 			),
 		},
@@ -147,8 +149,21 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 	case discordgo.InteractionApplicationCommand:
 		b.handleCommand(ctx, i)
 	case discordgo.InteractionMessageComponent:
+		if id, ok := parseGameID(i.MessageComponentData().CustomID); ok && (id.Action == gameAnswer || id.Action == gamePropose) {
+			b.handleGameButton(ctx, i, id)
+			return
+		}
 		b.handleSurveyButton(ctx, i)
 	case discordgo.InteractionModalSubmit:
+		data := i.ModalSubmitData()
+		if id, ok := parseGameID(data.CustomID); ok && id.Action == gameAnswerModal {
+			b.handleGameModal(ctx, i, id, data)
+			return
+		}
+		if id, ok := parseGameID(data.CustomID); ok && id.Action == gameProposeModal {
+			b.handleProposeModal(ctx, i, id, data)
+			return
+		}
 		b.handleNoteModal(ctx, i)
 	}
 }
@@ -296,7 +311,7 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name,
-		"participants", len(members), "you", you)+"\n"+kudosChannelLine(l, g))
+		"participants", len(members), "you", you)+"\n"+kudosChannelLine(l, g)+"\n"+gameLine(l, g))
 }
 
 func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
@@ -327,6 +342,9 @@ func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *
 		case optKudosChan:
 			v := o.ChannelValue(nil).ID
 			p.KudosChannelID = &v
+		case optGames:
+			v := o.BoolValue()
+			p.GamesEnabled = &v
 		case optWorkDays:
 			p.WorkingDays = presetDays(o.StringValue())
 		}
@@ -348,9 +366,12 @@ func configSaved(l *i18n.Locale, g api.Guild, p api.GuildPatch) string {
 	s := l.T("config.saved",
 		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
-		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + "\n" + kudosChannelLine(l, g)
+		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + "\n" + kudosChannelLine(l, g) + "\n" + gameLine(l, g)
 	if p.Anonymous != nil && !*p.Anonymous {
 		s += "\n" + l.T("config.now_public")
+	}
+	if p.GamesEnabled != nil && *p.GamesEnabled {
+		s += "\n" + l.T("config.games_on")
 	}
 	return s
 }

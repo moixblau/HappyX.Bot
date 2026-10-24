@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -22,6 +23,9 @@ type Bot struct {
 	api *api.Client
 	log *slog.Logger
 	now func() time.Time
+	// webURL is the dashboard's address, e.g. https://happyx.example.com, for links to the
+	// game. Empty when the dashboard isn't deployed.
+	webURL string
 
 	commandID atomic.Pointer[string] // /happyx's ID once registered, for clickable mentions
 }
@@ -43,6 +47,9 @@ func New(token string, client *api.Client, log *slog.Logger) (*Bot, error) {
 	dg.AddHandler(b.onInteraction)
 	return b, nil
 }
+
+// SetWebURL tells the bot where the dashboard is, so it can link members to the game.
+func (b *Bot) SetWebURL(u string) { b.webURL = strings.TrimRight(u, "/") }
 
 // Run connects to Discord and runs the scheduler until ctx is cancelled.
 func (b *Bot) Run(ctx context.Context) error {
@@ -172,6 +179,15 @@ func (b *Bot) tick(ctx context.Context) {
 		if from, to, due := schedule.ReportDue(st, now); due {
 			b.dispatch(ctx, g, "report", from, func() error { return b.sendReport(ctx, g, from, to) })
 		}
+		if !g.GamesEnabled {
+			continue
+		}
+		if week, due := schedule.GameQuestionDue(st, now); due {
+			b.dispatch(ctx, g, "game", week, func() error { return b.sendGameQuestion(ctx, g, week) })
+		}
+		if week, due := schedule.GameGuessDue(st, now); due {
+			b.dispatch(ctx, g, "game_guess", week, func() error { return b.sendGameGuess(ctx, g, week) })
+		}
 	}
 }
 
@@ -197,19 +213,7 @@ func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) error {
 	if err != nil {
 		return err
 	}
-	msg := surveyMessage(i18n.Get(g.Language), g, day)
-	failed := 0
-	for _, m := range members {
-		if err := b.dm(m.DiscordID, msg); err != nil {
-			// Usually the user has DMs from server members turned off.
-			b.log.Warn("survey DM failed", "guild", g.DiscordID, "user", m.DiscordID, "err", err)
-			failed++
-		}
-	}
-	if failed > 0 && failed == len(members) {
-		return fmt.Errorf("could not DM any of %d members", failed)
-	}
-	return nil
+	return b.dmAll(g, members, surveyMessage(i18n.Get(g.Language), g, day), "survey")
 }
 
 func (b *Bot) sendReport(ctx context.Context, g api.Guild, from, to string) error {

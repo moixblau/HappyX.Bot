@@ -68,3 +68,27 @@ func TestCurrentPeriod(t *testing.T) {
 		t.Fatalf("monday: got %s..%s", from, to)
 	}
 }
+
+func TestGameDue(t *testing.T) {
+	s := Settings{Timezone: "UTC", SurveyHour: 9}
+	for day, want := range map[int][2]bool{ // Oct 2026: 19 is a Monday
+		19: {true, false}, 21: {true, false}, 22: {false, true}, 25: {false, true}, 26: {true, false},
+	} {
+		now := time.Date(2026, 10, day, 10, 0, 0, 0, time.UTC)
+		qWeek, q := GameQuestionDue(s, now)
+		gWeek, g := GameGuessDue(s, now)
+		if q != want[0] || g != want[1] {
+			t.Errorf("Oct %d: question %v guess %v, want %v", day, q, g, want)
+		}
+		wantWeek := "2026-10-19"
+		if day == 26 {
+			wantWeek = "2026-10-26"
+		}
+		if (q && qWeek != wantWeek) || (g && gWeek != wantWeek) {
+			t.Errorf("Oct %d: week %q/%q, want %s", day, qWeek, gWeek, wantWeek)
+		}
+	}
+	if _, due := GameQuestionDue(s, time.Date(2026, 10, 19, 8, 59, 0, 0, time.UTC)); due {
+		t.Error("question due before the survey hour")
+	}
+}
