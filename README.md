@@ -9,6 +9,8 @@ report. One bot serves any number of servers; their data is kept apart by
 
 - **Joining a server** registers it in the API with the server owner as admin, and registers every
   human member (bots are ignored). New members are added as they join; members who leave are removed.
+  The bot also keeps the server's roles and each member's roles in the API, so the dashboard can
+  give access to a role (Settings → Admins and permissions) and that access follows who has it.
 - **Removing the bot** from a server stops surveys and reports and hides the server from the
   dashboard. The API keeps its data for 30 days in case the bot is added back, then deletes it.
 - **Deleting a server on the dashboard** (Settings → Delete server from HappyX) deletes all its data
@@ -46,8 +48,12 @@ report. One bot serves any number of servers; their data is kept apart by
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
 | `/happyx kudos` | everyone | `user`, `message` (≤300): publicly thank a teammate |
-| `/happyx config` | admin | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel`, `working_days`, `games` |
-| `/happyx report` | admin | see the last completed period's report now, or the one in progress with `period:current` |
+| `/happyx config` | manage | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel`, `working_days`, `games` |
+| `/happyx report` | view | see the last completed period's report now, or the one in progress with `period:current` |
+
+**Who**: *view* and *manage* are given to users or roles on the dashboard. The HappyX admin (who
+receives the reports), the server's owner and its Discord Administrators can do everything; only
+they can change `admin`.
 
 Discord shows these names translated for users whose client is in a supported language.
 
