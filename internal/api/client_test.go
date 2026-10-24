@@ -81,6 +81,19 @@ func TestClientAgainstAPI(t *testing.T) {
 			t.Fatal("sync re-subscribed a member who opted out")
 		}
 	}
+
+	ids, err := c.Removals(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range ids {
+		if id == g {
+			t.Fatal("a registered guild shouldn't be waiting for removal")
+		}
+	}
+	if err := c.DoneRemoving(ctx, g); err != nil {
+		t.Fatalf("confirming a removal that isn't queued should be harmless: %v", err)
+	}
 }
 
 func mustLoc(t *testing.T, name string) *time.Location {
