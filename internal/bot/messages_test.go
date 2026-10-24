@@ -215,3 +215,39 @@ func TestWorkingDaysText(t *testing.T) {
 		}
 	}
 }
+
+func TestSurveyMessage(t *testing.T) {
+	es := i18n.Get("es")
+	g := api.Guild{DiscordID: "1", Name: "Equipo", Anonymous: true}
+	ana := surveyRecipient{ID: "2", Name: "Ana", Streak: 5}
+
+	// No custom message: the default text in the guild's language.
+	def := surveyMessage(es, g, "2026-10-23", ana)
+	if def.Content != es.T("survey.question", "guild", "Equipo")+"\n"+es.T("survey.anonymous") {
+		t.Fatalf("default: %q", def.Content)
+	}
+
+	g.SurveyMessage = "Hola {{user.name}} ({{ user.mention }}), {{weekday}} — {{date}} en {{guild.name}}: {{user.streak}} días. {{user.nope}} @everyone"
+	msg := surveyMessage(es, g, "2026-10-23", ana)
+	want := "Hola Ana (<@2>), viernes — viernes, 23 de octubre en Equipo: 5 días. {{user.nope}} @everyone\n" + es.T("survey.anonymous")
+	if msg.Content != want {
+		t.Fatalf("custom:\n got %q\nwant %q", msg.Content, want)
+	}
+	// The service always adds the mood buttons and «Don't ask me again», and nothing pings.
+	if len(msg.Components) != 2 || msg.AllowedMentions == nil || len(msg.AllowedMentions.Parse) != 0 {
+		t.Fatalf("components or mentions: %+v %+v", msg.Components, msg.AllowedMentions)
+	}
+	g.Anonymous = false
+	if msg := surveyMessage(es, g, "2026-10-23", ana); !strings.HasSuffix(msg.Content, es.T("survey.named")) {
+		t.Fatalf("named notice: %q", msg.Content)
+	}
+
+	for code, want := range map[string]string{
+		"en": "Friday, October 23", "ca": "divendres, 23 d'octubre", "de": "Freitag, 23. Oktober",
+		"fr": "vendredi 23 octobre", "pt-BR": "sexta-feira, 23 de outubro",
+	} {
+		if got := longDate(i18n.Get(code), time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)); got != want {
+			t.Errorf("%s: got %q, want %q", code, got, want)
+		}
+	}
+}
