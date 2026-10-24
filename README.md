@@ -9,6 +9,10 @@ report. One bot serves any number of servers; their data is kept apart by
 
 - **Joining a server** registers it in the API with the server owner as admin, and registers every
   human member (bots are ignored). New members are added as they join; members who leave are removed.
+- **Removing the bot** from a server stops surveys and reports and hides the server from the
+  dashboard. The API keeps its data for 30 days in case the bot is added back, then deletes it.
+- **Deleting a server on the dashboard** (Settings → Delete server from HappyX) deletes all its data
+  at once; within a minute the bot leaves the server by itself.
 - **Survey**: on the server's working days (Monday to Friday by default; `/happyx config working_days`
   offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
   five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
