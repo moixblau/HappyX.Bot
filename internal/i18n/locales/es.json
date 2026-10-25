@@ -52,6 +52,7 @@
   "resume.done": "¡Perfecto! Volverás a recibir la encuesta diaria por mensaje privado.",
   "stop.done": "Hecho, ya no recibirás la encuesta de este servidor. Si cambias de idea, usa {resume_cmd} en el servidor.",
   "config.saved": "Configuración guardada: encuesta {days} a las {hour}:00 ({timezone}), report {frequency} para {admin}, anónimo: {anonymous}, idioma: {language}.",
+  "report.dm_off": "El report no se envía por mensaje privado: se ve en la web y con /report.",
   "config.now_public": "A partir de ahora el administrador puede ver quién responde. Las respuestas dadas mientras el servidor era anónimo siguen siendo anónimas.",
   "admin.only": "No tienes permiso de HappyX para esto. Pídeselo al administrador de HappyX ({admin}) o a un administrador del servidor desde la web.",
   "error.generic": "Algo ha fallado, inténtalo más tarde. 😖",
