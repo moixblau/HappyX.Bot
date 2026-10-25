@@ -110,10 +110,13 @@ code and sample data. No Discord server or API needed.
 1. Create an application at https://discord.com/developers/applications and add a **Bot**.
 2. Under **Bot > Privileged Gateway Intents**, enable **Server Members Intent** (needed to list members).
 3. Copy the bot token into `DISCORD_TOKEN`.
-4. Invite it with **OAuth2 > URL Generator**, scopes `bot` and `applications.commands`. No extra
-   permissions are needed for the survey and reports, which go by DM. To post kudos in a
-   `kudos_channel`, the bot needs **View Channel**, **Send Messages** and **Embed Links** there;
-   otherwise kudos are posted as the reply to the command, which needs no permissions.
+4. Invite it to a server. The easiest way is the **Add to Discord** button on the dashboard's
+   landing page (it needs `DISCORD_CLIENT_ID` set in the API). Or use **OAuth2 > URL Generator**,
+   scopes `bot` and `applications.commands`. No extra permissions are needed for the survey and
+   reports, which go by DM. To post kudos in a `kudos_channel`, the bot needs **View Channel**,
+   **Send Messages** and **Embed Links** there; otherwise kudos are posted as the reply to the
+   command, which needs no permissions. The server's owner becomes its HappyX admin; change it
+   with `/happyx config admin` or on the dashboard.
 
 Members need "Allow direct messages from server members" enabled (Discord's default) to receive the survey.
 
@@ -137,3 +140,7 @@ HAPPYX_API_URL=http://localhost:8083 HAPPYX_API_KEY=... go test ./internal/api/
 ```
 
 To run everything, use the `docker-compose.yml` in [HappyX](https://github.com/happyx-app/HappyX).
+
+## License
+
+[MIT](LICENSE). The report fonts in `internal/report/fonts` keep their own licence ([OFL](internal/report/fonts/OFL.txt)).

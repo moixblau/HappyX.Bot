@@ -30,7 +30,7 @@ var logo []byte
 
 // names shows the sample IDs as Discord would.
 var names = map[string]string{
-	bot.PreviewAdminID:   "joan",
+	bot.PreviewAdminID:   "alex",
 	bot.PreviewAnaID:     "ana",
 	bot.PreviewBeaID:     "bea",
 	bot.PreviewChannelID: "kudos",
