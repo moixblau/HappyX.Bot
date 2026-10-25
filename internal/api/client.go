@@ -287,6 +287,13 @@ func (c *Client) SurveyRecipients(ctx context.Context, guildID string, withStrea
 	return ms, err
 }
 
+// GamePlayers is Members without those the server's game roles leave out of «Who's who?».
+func (c *Client) GamePlayers(ctx context.Context, guildID string) ([]Member, error) {
+	var ms []Member
+	err := c.do(ctx, http.MethodGet, "/v1/guilds/"+url.PathEscape(guildID)+"/members?for=game", nil, &ms)
+	return ms, err
+}
+
 func (c *Client) RecordMood(ctx context.Context, guildID, userID, day string, mood int, message string) error {
 	return c.do(ctx, http.MethodPut, memberPath(guildID, userID)+"/mood", map[string]any{
 		"mood": mood, "message": message, "day": day,
