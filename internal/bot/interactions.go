@@ -301,8 +301,18 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		b.replyError(i, l, err)
 		return
 	}
+	recipients, err := b.api.SurveyRecipients(ctx, i.GuildID, false)
+	if err != nil {
+		b.replyError(i, l, err)
+		return
+	}
 	you := l.T("status.paused")
 	for _, m := range members {
+		if m.DiscordID == user.ID {
+			you = l.T("status.not_your_role") // opted in, but the survey roles leave them out
+		}
+	}
+	for _, m := range recipients {
 		if m.DiscordID == user.ID {
 			you = l.T("status.receiving")
 		}
@@ -311,7 +321,7 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name,
-		"participants", len(members), "you", you)+reportDMLine(l, g)+"\n"+kudosChannelLine(l, g)+"\n"+gameLine(l, g))
+		"participants", len(recipients), "you", you)+reportDMLine(l, g)+"\n"+kudosChannelLine(l, g)+"\n"+gameLine(l, g))
 }
 
 func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {

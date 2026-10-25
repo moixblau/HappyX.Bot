@@ -83,7 +83,7 @@ type Member struct {
 	DiscordID string `json:"discord_user_id"`
 	Username  string `json:"username"`
 	Active    bool   `json:"active"`
-	// Streak is how many days in a row they answered; only filled by MembersWithStreak.
+	// Streak is how many days in a row they answered; only filled by SurveyRecipients withStreak.
 	Streak int `json:"streak"`
 }
 
@@ -275,10 +275,15 @@ func (c *Client) Members(ctx context.Context, guildID string) ([]Member, error) 
 	return ms, err
 }
 
-// MembersWithStreak is Members with each member's answering streak, for {{user.streak}}.
-func (c *Client) MembersWithStreak(ctx context.Context, guildID string) ([]Member, error) {
+// SurveyRecipients is Members without those the server's survey roles leave out of the daily
+// survey. withStreak adds each member's answering streak, for {{user.streak}}.
+func (c *Client) SurveyRecipients(ctx context.Context, guildID string, withStreak bool) ([]Member, error) {
+	path := "/v1/guilds/" + url.PathEscape(guildID) + "/members?for=survey"
+	if withStreak {
+		path += "&with=streak"
+	}
 	var ms []Member
-	err := c.do(ctx, http.MethodGet, "/v1/guilds/"+url.PathEscape(guildID)+"/members?with=streak", nil, &ms)
+	err := c.do(ctx, http.MethodGet, path, nil, &ms)
 	return ms, err
 }
 

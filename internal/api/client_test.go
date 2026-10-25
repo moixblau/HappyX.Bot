@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -108,6 +109,21 @@ func TestClientAgainstAPI(t *testing.T) {
 	if level, err := c.Access(ctx, g, u2, true); err != nil || level != AccessOwner {
 		t.Fatalf("Discord administrator: %q %v", level, err)
 	}
+	// With the survey going only to Staff, the admin (no roles) is left out of it but not of Members.
+	setSurveyRoles := func(body map[string]any) {
+		t.Helper()
+		if err := c.do(ctx, http.MethodPatch, "/v1/guilds/"+g, map[string]any{"survey_roles": body}, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := c.UpsertMember(ctx, g, admin, "admin", nil); err != nil {
+		t.Fatal(err)
+	}
+	setSurveyRoles(map[string]any{"mode": "only", "role_ids": []string{"400000000000000077"}})
+	if rs, err := c.SurveyRecipients(ctx, g, true); err != nil || len(rs) != 1 || rs[0].DiscordID != u2 {
+		t.Fatalf("survey recipients with only Staff: %+v %v", rs, err)
+	}
+	setSurveyRoles(map[string]any{"mode": "all"})
 	if err := c.MemberLeft(ctx, g, u2); err != nil {
 		t.Fatal(err)
 	}

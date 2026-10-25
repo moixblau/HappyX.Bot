@@ -42,6 +42,7 @@
   "status.text": "**Encuesta:** {days} a las {hour}:00 ({timezone})\n**Report:** {frequency}, para {admin}\n**Anónimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Tú:** {you}",
   "status.receiving": "recibes la encuesta",
   "status.paused": "en pausa",
+  "status.not_your_role": "tu rol no recibe la encuesta",
   "freq.weekly": "semanal",
   "freq.monthly": "mensual",
   "period.last": "Último completo",
