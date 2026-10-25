@@ -9,7 +9,7 @@ feel every working day and turns the answers into reports.
 
 [![CI](https://github.com/happyx-app/HappyX.Bot/actions/workflows/ci.yml/badge.svg)](https://github.com/happyx-app/HappyX.Bot/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=flat-square&logo=go&logoColor=white)](go.mod)
-[![Discord](https://img.shields.io/badge/Discord-bot-5865F2?style=flat-square&logo=discord&logoColor=white)](https://happyx.joanbe.net)
+[![Discord](https://img.shields.io/badge/Discord-bot-5865F2?style=flat-square&logo=discord&logoColor=white)](#setting-up-the-discord-application)
 [![Image](https://img.shields.io/badge/ghcr.io-happyx--bot-8b5cf6?style=flat-square&logo=docker&logoColor=white)](https://github.com/orgs/happyx-app/packages)
 
 [HappyX](https://github.com/happyx-app/HappyX) ·
