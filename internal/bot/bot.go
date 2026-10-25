@@ -281,7 +281,7 @@ func (b *Bot) tick(ctx context.Context) {
 		if day, due := schedule.SurveyDue(st, now); due {
 			b.dispatch(ctx, g, "survey", day, func() error { return b.sendSurvey(ctx, g, day) })
 		}
-		if from, to, due := schedule.ReportDue(st, now); due {
+		if from, to, due := schedule.ReportDue(st, now); due && g.SendsReportDM() {
 			b.dispatch(ctx, g, "report", from, func() error { return b.sendReport(ctx, g, from, to) })
 		}
 		if !g.GamesEnabled {

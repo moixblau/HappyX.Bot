@@ -311,7 +311,7 @@ func (b *Bot) cmdStatus(ctx context.Context, i *discordgo.InteractionCreate, l *
 		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
 		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name,
-		"participants", len(members), "you", you)+"\n"+kudosChannelLine(l, g)+"\n"+gameLine(l, g))
+		"participants", len(members), "you", you)+reportDMLine(l, g)+"\n"+kudosChannelLine(l, g)+"\n"+gameLine(l, g))
 }
 
 func (b *Bot) cmdConfig(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, user *discordgo.User, opts []*discordgo.ApplicationCommandInteractionDataOption) {
@@ -373,7 +373,7 @@ func configSaved(l *i18n.Locale, g api.Guild, p api.GuildPatch) string {
 	s := l.T("config.saved",
 		"days", workingDaysText(l, g.WorkingDays), "hour", fmt.Sprintf("%02d", g.SurveyHour), "timezone", g.Timezone,
 		"frequency", l.T("freq."+g.ReportFrequency), "admin", "<@"+g.AdminDiscordID+">",
-		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + "\n" + kudosChannelLine(l, g) + "\n" + gameLine(l, g)
+		"anonymous", yesNo(l, g.Anonymous), "language", i18n.Get(g.Language).Name) + reportDMLine(l, g) + "\n" + kudosChannelLine(l, g) + "\n" + gameLine(l, g)
 	if p.Anonymous != nil && !*p.Anonymous {
 		s += "\n" + l.T("config.now_public")
 	}
@@ -486,4 +486,12 @@ func yesNo(l *i18n.Locale, v bool) string {
 		return l.T("yes")
 	}
 	return l.T("no")
+}
+
+// reportDMLine says the report is not sent by DM, when the admin chose to see it only on the web.
+func reportDMLine(l *i18n.Locale, g api.Guild) string {
+	if g.SendsReportDM() {
+		return ""
+	}
+	return "\n" + l.T("report.dm_off")
 }
