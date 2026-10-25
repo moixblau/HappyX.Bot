@@ -279,25 +279,29 @@ func (b *Bot) tick(ctx context.Context) {
 	for _, g := range guilds {
 		st := schedule.Settings{Timezone: g.Timezone, SurveyHour: g.SurveyHour, ReportFrequency: g.ReportFrequency, WorkingDays: g.WorkingDays}
 		if day, due := schedule.SurveyDue(st, now); due {
-			b.dispatch(ctx, g, "survey", day, func() error { return b.sendSurvey(ctx, g, day) })
+			b.dispatch(ctx, g, "survey", day, func() (delivery, error) { return b.sendSurvey(ctx, g, day) })
 		}
 		if from, to, due := schedule.ReportDue(st, now); due && g.SendsReportDM() {
-			b.dispatch(ctx, g, "report", from, func() error { return b.sendReport(ctx, g, from, to) })
+			b.dispatch(ctx, g, "report", from, func() (delivery, error) { return b.sendReport(ctx, g, from, to) })
 		}
 		if !g.GamesEnabled {
 			continue
 		}
 		if week, due := schedule.GameQuestionDue(st, now); due {
-			b.dispatch(ctx, g, "game", week, func() error { return b.sendGameQuestion(ctx, g, week) })
+			b.dispatch(ctx, g, "game", week, func() (delivery, error) { return b.sendGameQuestion(ctx, g, week) })
 		}
 		if week, due := schedule.GameGuessDue(st, now); due {
-			b.dispatch(ctx, g, "game_guess", week, func() error { return b.sendGameGuess(ctx, g, week) })
+			b.dispatch(ctx, g, "game_guess", week, func() (delivery, error) { return b.sendGameGuess(ctx, g, week) })
 		}
 	}
 }
 
-// dispatch runs send only if the API confirms nobody sent it yet for this period.
-func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, send func() error) {
+// delivery counts the DMs of one send: who it went to and how many failed.
+type delivery struct{ recipients, failed int }
+
+// dispatch runs send only if the API confirms nobody sent it yet for this period, then tells
+// the API how many people it went to and how many DMs failed, for the admin dashboard.
+func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, send func() (delivery, error)) {
 	claimed, err := b.api.ClaimDispatch(ctx, g.DiscordID, kind, period)
 	if err != nil {
 		b.log.Error("claim dispatch", "guild", g.DiscordID, "kind", kind, "err", err)
@@ -306,17 +310,23 @@ func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, se
 	if !claimed {
 		return
 	}
-	if err := send(); err != nil {
+	d, err := send()
+	if d.recipients > 0 {
+		if err := b.api.FinishDispatch(ctx, g.DiscordID, kind, period, d.recipients, d.failed); err != nil {
+			b.log.Warn("report dispatch counts", "guild", g.DiscordID, "kind", kind, "period", period, "err", err)
+		}
+	}
+	if err != nil {
 		b.log.Error("dispatch", "guild", g.DiscordID, "kind", kind, "period", period, "err", err)
 		return
 	}
-	b.log.Info("dispatched", "guild", g.DiscordID, "kind", kind, "period", period)
+	b.log.Info("dispatched", "guild", g.DiscordID, "kind", kind, "period", period, "recipients", d.recipients, "failed", d.failed)
 }
 
-func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) error {
+func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) (delivery, error) {
 	members, err := b.api.SurveyRecipients(ctx, g.DiscordID, strings.Contains(g.SurveyMessage, "user.streak"))
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
 	l := i18n.Get(g.Language)
 	return b.dmEach(g, members, func(m api.Member) *discordgo.MessageSend {
@@ -333,12 +343,15 @@ func (b *Bot) displayName(guildID string, m api.Member) string {
 	return m.Username
 }
 
-func (b *Bot) sendReport(ctx context.Context, g api.Guild, from, to string) error {
+func (b *Bot) sendReport(ctx context.Context, g api.Guild, from, to string) (delivery, error) {
 	r, err := b.api.Report(ctx, g.DiscordID, from, to)
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
-	return b.dm(g.AdminDiscordID, reportMessage(i18n.Get(g.Language), g, r))
+	if err := b.dm(g.AdminDiscordID, reportMessage(i18n.Get(g.Language), g, r)); err != nil {
+		return delivery{recipients: 1, failed: 1}, err
+	}
+	return delivery{recipients: 1}, nil
 }
 
 func (b *Bot) dm(userID string, msg *discordgo.MessageSend) error {

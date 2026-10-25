@@ -47,6 +47,12 @@ func TestClientAgainstAPI(t *testing.T) {
 	if err != nil || second {
 		t.Fatalf("second claim should be false without error: %v %v (first %v)", second, err, first)
 	}
+	if err := c.FinishDispatch(ctx, g, "survey", period, 3, 1); err != nil {
+		t.Fatalf("finish dispatch: %v", err)
+	}
+	if err := c.FinishDispatch(ctx, g, "survey", "2001-01-02", 3, 1); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("finish an unclaimed dispatch: want ErrNotFound, got %v", err)
+	}
 
 	const u2 = "200000000000000079"
 	if err := c.UpsertMember(ctx, g, u2, "tester2", nil); err != nil {

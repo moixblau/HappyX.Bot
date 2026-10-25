@@ -324,6 +324,12 @@ func (c *Client) ClaimDispatch(ctx context.Context, guildID, kind, period string
 	return err == nil, err
 }
 
+// FinishDispatch tells the API how many people a claimed send went to and how many DMs failed.
+func (c *Client) FinishDispatch(ctx context.Context, guildID, kind, period string, recipients, failed int) error {
+	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/dispatches/"+url.PathEscape(kind)+"/"+url.PathEscape(period),
+		map[string]int{"recipients": recipients, "failed": failed}, nil)
+}
+
 // Report returns the report for [from, to]; empty strings mean the last complete period.
 func (c *Client) Report(ctx context.Context, guildID, from, to string) (Report, error) {
 	path := "/v1/guilds/" + url.PathEscape(guildID) + "/report"

@@ -74,20 +74,20 @@ func (b *Bot) gameURL(guildID string) string {
 	return b.webURL + "/#/game/" + guildID
 }
 
-func (b *Bot) sendGameQuestion(ctx context.Context, g api.Guild, week string) error {
+func (b *Bot) sendGameQuestion(ctx context.Context, g api.Guild, week string) (delivery, error) {
 	l := i18n.Get(g.Language)
 	r, err := b.api.StartGameRound(ctx, g.DiscordID, week, gameQuestion(l, week))
 	if errors.Is(err, api.ErrConflict) {
 		// Games were turned off, or answering closed, since the guild list was read.
 		b.log.Info("game round not started", "guild", g.DiscordID, "week", week, "err", err)
-		return nil
+		return delivery{}, nil
 	}
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
 	members, err := b.api.GamePlayers(ctx, g.DiscordID)
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
 	msg := gameQuestionMessage(l, g, r, b.gameURL(g.DiscordID))
 	return b.dmAll(g, members, msg, "game question")
@@ -95,17 +95,17 @@ func (b *Bot) sendGameQuestion(ctx context.Context, g api.Guild, week string) er
 
 // sendGameGuess tells every member guessing is open, if the round got enough answers and there
 // is a dashboard to guess on, and asks them for next week's question either way.
-func (b *Bot) sendGameGuess(ctx context.Context, g api.Guild, week string) error {
+func (b *Bot) sendGameGuess(ctx context.Context, g api.Guild, week string) (delivery, error) {
 	link := b.gameURL(g.DiscordID)
 	if link == "" {
 		b.log.Warn("WEB_URL not set, the game's Thursday DM only asks for next week's question", "guild", g.DiscordID)
 	}
 	r, err := b.api.GameRound(ctx, g.DiscordID, week)
 	if errors.Is(err, api.ErrNotFound) {
-		return nil // no round this week
+		return delivery{}, nil // no round this week
 	}
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
 	if r.Answers < r.MinAnswers {
 		b.log.Info("game round has too few answers to guess", "guild", g.DiscordID, "week", week, "answers", r.Answers)
@@ -113,29 +113,29 @@ func (b *Bot) sendGameGuess(ctx context.Context, g api.Guild, week string) error
 	}
 	members, err := b.api.GamePlayers(ctx, g.DiscordID)
 	if err != nil {
-		return err
+		return delivery{}, err
 	}
 	return b.dmAll(g, members, gameGuessMessage(i18n.Get(g.Language), g, r, link), "game guess")
 }
 
-func (b *Bot) dmAll(g api.Guild, members []api.Member, msg *discordgo.MessageSend, what string) error {
+func (b *Bot) dmAll(g api.Guild, members []api.Member, msg *discordgo.MessageSend, what string) (delivery, error) {
 	return b.dmEach(g, members, func(api.Member) *discordgo.MessageSend { return msg }, what)
 }
 
 // dmEach is dmAll with a message built for each member.
-func (b *Bot) dmEach(g api.Guild, members []api.Member, msg func(api.Member) *discordgo.MessageSend, what string) error {
-	failed := 0
+func (b *Bot) dmEach(g api.Guild, members []api.Member, msg func(api.Member) *discordgo.MessageSend, what string) (delivery, error) {
+	d := delivery{recipients: len(members)}
 	for _, m := range members {
 		if err := b.dm(m.DiscordID, msg(m)); err != nil {
 			// Usually the user has DMs from server members turned off.
 			b.log.Warn(what+" DM failed", "guild", g.DiscordID, "user", m.DiscordID, "err", err)
-			failed++
+			d.failed++
 		}
 	}
-	if failed > 0 && failed == len(members) {
-		return fmt.Errorf("could not DM any of %d members", failed)
+	if d.failed > 0 && d.failed == len(members) {
+		return d, fmt.Errorf("could not DM any of %d members", d.failed)
 	}
-	return nil
+	return d, nil
 }
 
 func gameQuestionMessage(l *i18n.Locale, g api.Guild, r api.GameRound, link string) *discordgo.MessageSend {
