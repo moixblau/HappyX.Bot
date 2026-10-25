@@ -124,6 +124,16 @@ func TestClientAgainstAPI(t *testing.T) {
 		t.Fatalf("survey recipients with only Staff: %+v %v", rs, err)
 	}
 	setSurveyRoles(map[string]any{"mode": "all"})
+	// The game has its own list: leaving Staff out of it leaves only the admin to play.
+	if err := c.do(ctx, http.MethodPatch, "/v1/guilds/"+g, map[string]any{"game_roles": map[string]any{"mode": "except", "role_ids": []string{"400000000000000077"}}}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if ps, err := c.GamePlayers(ctx, g); err != nil || len(ps) != 1 || ps[0].DiscordID != admin {
+		t.Fatalf("game players without Staff: %+v %v", ps, err)
+	}
+	if err := c.do(ctx, http.MethodPatch, "/v1/guilds/"+g, map[string]any{"game_roles": map[string]any{"mode": "all"}}, nil); err != nil {
+		t.Fatal(err)
+	}
 	if err := c.MemberLeft(ctx, g, u2); err != nil {
 		t.Fatal(err)
 	}
