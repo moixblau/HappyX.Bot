@@ -39,6 +39,7 @@
   "status.text": "**Enquesta:** {days} a les {hour}:00 ({timezone})\n**Report:** {frequency}, per a {admin}\n**Anònim:** {anonymous}\n**Idioma:** {language}\n**Participants:** {participants}\n**Tu:** {you}",
   "status.receiving": "reps l'enquesta",
   "status.paused": "en pausa",
+  "status.not_your_role": "el teu rol no rep l'enquesta",
   "freq.weekly": "setmanal",
   "freq.monthly": "mensual",
   "period.last": "Últim complet",

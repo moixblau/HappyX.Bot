@@ -41,6 +41,7 @@
   "status.text": "**Pesquisa:** {days} às {hour}:00 ({timezone})\n**Relatório:** {frequency}, enviado para {admin}\n**Anônimo:** {anonymous}\n**Idioma:** {language}\n**Participantes:** {participants}\n**Você:** {you}",
   "status.receiving": "você recebe a pesquisa",
   "status.paused": "pausado",
+  "status.not_your_role": "seu cargo não recebe a pesquisa",
   "freq.weekly": "semanal",
   "freq.monthly": "mensal",
   "period.last": "Último completo",

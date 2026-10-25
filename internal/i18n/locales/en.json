@@ -42,6 +42,7 @@
   "status.text": "**Survey:** {days} at {hour}:00 ({timezone})\n**Report:** {frequency}, sent to {admin}\n**Anonymous:** {anonymous}\n**Language:** {language}\n**Participants:** {participants}\n**You:** {you}",
   "status.receiving": "you receive the survey",
   "status.paused": "paused",
+  "status.not_your_role": "your role doesn't receive the survey",
   "freq.weekly": "weekly",
   "freq.monthly": "monthly",
   "period.last": "Last completed",
