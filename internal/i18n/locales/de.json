@@ -41,6 +41,7 @@
   "status.text": "**Umfrage:** {days} um {hour}:00 ({timezone})\n**Bericht:** {frequency}, an {admin}\n**Anonym:** {anonymous}\n**Sprache:** {language}\n**Teilnehmende:** {participants}\n**Du:** {you}",
   "status.receiving": "du bekommst die Umfrage",
   "status.paused": "pausiert",
+  "status.not_your_role": "deine Rolle erhält die Umfrage nicht",
   "freq.weekly": "wöchentlich",
   "freq.monthly": "monatlich",
   "period.last": "Letzter abgeschlossener",
