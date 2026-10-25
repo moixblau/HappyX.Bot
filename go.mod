@@ -1,4 +1,4 @@
-module github.com/moixblau/HappyX.Bot
+module github.com/happyx-app/HappyX.Bot
 
 go 1.27.3
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/moixblau/HappyX.Bot/internal/api"
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/api"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
 )
 
 // Preview is one message the bot sends, built from sample data with the real builders, so

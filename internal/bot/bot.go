@@ -14,9 +14,9 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/moixblau/HappyX.Bot/internal/api"
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
-	"github.com/moixblau/HappyX.Bot/internal/schedule"
+	"github.com/happyx-app/HappyX.Bot/internal/api"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/schedule"
 )
 
 type Bot struct {
