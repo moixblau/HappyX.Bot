@@ -1,9 +1,9 @@
 name: Docker
 
 # Builds the image on every PR (without pushing) and publishes it to GHCR from main and v* tags:
-#   ghcr.io/moixblau/happyx-bot:latest   (main)
-#   ghcr.io/moixblau/happyx-bot:sha-<short sha>
-#   ghcr.io/moixblau/happyx-bot:1.2.3     (tag v1.2.3)
+#   ghcr.io/happyx-app/happyx-bot:latest   (main)
+#   ghcr.io/happyx-app/happyx-bot:sha-<short sha>
+#   ghcr.io/happyx-app/happyx-bot:1.2.3     (tag v1.2.3)
 on:
   push:
     branches: [main]
@@ -30,7 +30,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/moixblau/happyx-bot
+          images: ghcr.io/happyx-app/happyx-bot
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha

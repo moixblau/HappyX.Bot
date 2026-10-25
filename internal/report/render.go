@@ -16,8 +16,8 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 
-	"github.com/moixblau/HappyX.Bot/internal/api"
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/api"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
 )
 
 // Palette and type follow the web dashboard (HappyX.Web src/style.css, light theme): cards

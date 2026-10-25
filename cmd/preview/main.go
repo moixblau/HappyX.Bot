@@ -19,8 +19,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/moixblau/HappyX.Bot/internal/bot"
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/bot"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
 )
 
 // logo is the bot's avatar, the same drawing the web uses (HappyX.Web src/logo.svg).

@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
 )
 
 // Every literal key the code looks up must be in en.json, or users would see the raw key.

@@ -3,7 +3,7 @@
 Discord bot for HappyX. Every day it sends each member of a server a private message asking
 how they feel (1-5, with an optional comment), and sends the server's admin a weekly or monthly
 report. One bot serves any number of servers; their data is kept apart by
-[HappyX.Api](https://github.com/moixblau/HappyX.Api).
+[HappyX.Api](https://github.com/happyx-app/HappyX.Api).
 
 ## How it works
 
@@ -112,4 +112,4 @@ go test ./...
 HAPPYX_API_URL=http://localhost:8083 HAPPYX_API_KEY=... go test ./internal/api/
 ```
 
-To run everything, use the `docker-compose.yml` in [HappyX](https://github.com/moixblau/HappyX).
+To run everything, use the `docker-compose.yml` in [HappyX](https://github.com/happyx-app/HappyX).

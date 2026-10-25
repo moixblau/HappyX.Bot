@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
 )
 
 // workingDayPresets are the choices of /happyx config working_days, as ISO days (1 is

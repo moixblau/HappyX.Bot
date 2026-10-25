@@ -10,9 +10,9 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/moixblau/HappyX.Bot/internal/api"
-	"github.com/moixblau/HappyX.Bot/internal/i18n"
-	"github.com/moixblau/HappyX.Bot/internal/report"
+	"github.com/happyx-app/HappyX.Bot/internal/api"
+	"github.com/happyx-app/HappyX.Bot/internal/i18n"
+	"github.com/happyx-app/HappyX.Bot/internal/report"
 )
 
 // moodEmojis are the 1-5 answers, worst first. Their labels are mood.1-mood.5 in the catalogs.

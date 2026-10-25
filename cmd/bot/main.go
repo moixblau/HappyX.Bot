@@ -10,8 +10,8 @@ import (
 	"syscall"
 	_ "time/tzdata" // guild timezones must not depend on the image having zoneinfo
 
-	"github.com/moixblau/HappyX.Bot/internal/api"
-	"github.com/moixblau/HappyX.Bot/internal/bot"
+	"github.com/happyx-app/HappyX.Bot/internal/api"
+	"github.com/happyx-app/HappyX.Bot/internal/bot"
 )
 
 func main() {
