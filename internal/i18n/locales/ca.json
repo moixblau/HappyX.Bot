@@ -49,6 +49,7 @@
   "resume.done": "Perfecte! Tornaràs a rebre l'enquesta diària per missatge privat.",
   "stop.done": "Fet, ja no rebràs l'enquesta d'aquest servidor. Si canvies d'idea, fes servir {resume_cmd} al servidor.",
   "config.saved": "Configuració desada: enquesta {days} a les {hour}:00 ({timezone}), report {frequency} per a {admin}, anònim: {anonymous}, idioma: {language}.",
+  "report.dm_off": "El report no s'envia per missatge privat: es veu a la web i amb /report.",
   "config.now_public": "A partir d'ara l'administrador pot veure qui respon. Les respostes donades mentre el servidor era anònim continuen sent anònimes.",
   "admin.only": "No tens permís de HappyX per a això. Demana-li a l'administrador de HappyX ({admin}) o a un administrador del servidor des de la web.",
   "error.generic": "Alguna cosa ha fallat, torna-ho a provar més tard. 😖",

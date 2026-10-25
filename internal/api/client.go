@@ -64,14 +64,20 @@ type Guild struct {
 	Timezone        string `json:"timezone"`
 	SurveyHour      int    `json:"survey_hour"`
 	ReportFrequency string `json:"report_frequency"`
-	Language        string `json:"language"`
-	KudosChannelID  string `json:"kudos_channel_id"` // empty: where the command is used
-	GamesEnabled    bool   `json:"games_enabled"`
-	WorkingDays     []int  `json:"working_days"` // ISO days the survey goes out, 1 is Monday
+	// ReportDM is false when the main admin chose to see reports only on the web. Missing (an
+	// older API) means true.
+	ReportDM       *bool  `json:"report_dm"`
+	Language       string `json:"language"`
+	KudosChannelID string `json:"kudos_channel_id"` // empty: where the command is used
+	GamesEnabled   bool   `json:"games_enabled"`
+	WorkingDays    []int  `json:"working_days"` // ISO days the survey goes out, 1 is Monday
 	// SurveyMessage is the admin's own survey text with {{placeholders}}; empty means the default.
 	SurveyMessage string `json:"survey_message"`
 	Active        bool   `json:"active"`
 }
+
+// SendsReportDM reports whether the main admin gets the report as a DM.
+func (g Guild) SendsReportDM() bool { return g.ReportDM == nil || *g.ReportDM }
 
 type Member struct {
 	DiscordID string `json:"discord_user_id"`
