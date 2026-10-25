@@ -85,7 +85,7 @@ func (b *Bot) sendGameQuestion(ctx context.Context, g api.Guild, week string) er
 	if err != nil {
 		return err
 	}
-	members, err := b.api.Members(ctx, g.DiscordID)
+	members, err := b.api.GamePlayers(ctx, g.DiscordID)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (b *Bot) sendGameGuess(ctx context.Context, g api.Guild, week string) error
 		b.log.Info("game round has too few answers to guess", "guild", g.DiscordID, "week", week, "answers", r.Answers)
 		link = ""
 	}
-	members, err := b.api.Members(ctx, g.DiscordID)
+	members, err := b.api.GamePlayers(ctx, g.DiscordID)
 	if err != nil {
 		return err
 	}
