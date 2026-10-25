@@ -51,6 +51,7 @@
   "resume.done": "Perfeito! Você vai voltar a receber a pesquisa diária por mensagem direta.",
   "stop.done": "Pronto, você não vai mais receber a pesquisa deste servidor. Se mudar de ideia, use {resume_cmd} no servidor.",
   "config.saved": "Configurações salvas: pesquisa {days} às {hour}:00 ({timezone}), relatório {frequency} enviado para {admin}, anônimo: {anonymous}, idioma: {language}.",
+  "report.dm_off": "O relatório não é enviado por mensagem privada: veja na web ou com /report.",
   "config.now_public": "A partir de agora o administrador pode ver quem responde. As respostas dadas enquanto o servidor era anônimo continuam anônimas.",
   "admin.only": "Você não tem permissão do HappyX para isso. Peça ao admin do HappyX ({admin}) ou a um administrador do servidor no painel.",
   "error.generic": "Algo deu errado, tente de novo mais tarde. 😖",

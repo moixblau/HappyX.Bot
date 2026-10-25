@@ -51,6 +51,7 @@
   "resume.done": "Perfetto! Riceverai di nuovo il sondaggio giornaliero in messaggio privato.",
   "stop.done": "Fatto, non riceverai più il sondaggio di questo server. Se cambi idea, usa {resume_cmd} nel server.",
   "config.saved": "Impostazioni salvate: sondaggio {days} alle {hour}:00 ({timezone}), report {frequency} inviato a {admin}, anonimo: {anonymous}, lingua: {language}.",
+  "report.dm_off": "Il report non viene inviato in messaggio privato: si vede sul web e con /report.",
   "config.now_public": "Da ora l'amministratore può vedere chi risponde. Le risposte date mentre il server era anonimo restano anonime.",
   "admin.only": "Non hai il permesso HappyX per farlo. Chiedilo all'admin di HappyX ({admin}) o a un amministratore del server dalla dashboard.",
   "error.generic": "Qualcosa è andato storto, riprova più tardi. 😖",
