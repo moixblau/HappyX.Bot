@@ -35,20 +35,96 @@ func (b *Bot) cmdKudos(ctx context.Context, i *discordgo.InteractionCreate, l *i
 	if resolved != nil {
 		to = resolved.Users[toID]
 	}
-	switch {
-	case to == nil || message == "":
-		return
-	case to.Bot:
-		b.ephemeral(i, l.T("kudos.no_bots"))
-		return
-	case to.ID == giver.ID:
-		b.ephemeral(i, l.T("kudos.no_self"))
-		return
-	case resolved.Members[to.ID] == nil: // Discord only resolves members of this guild
-		b.ephemeral(i, l.T("kudos.not_in_server", "user", "<@"+to.ID+">"))
+	if to == nil || message == "" {
 		return
 	}
+	// Discord only resolves members of this guild.
+	if refusal := kudosRefusal(l, giver, to, resolved.Members[to.ID] != nil); refusal != "" {
+		b.ephemeral(i, refusal)
+		return
+	}
+	b.giveKudos(ctx, i, l, giver, to, message, nil)
+}
 
+// cmdKudosMenu answers "Give kudos" in the right-click Apps menu of a user or a message (the
+// kudos goes to its author) with a modal for the kudos' text.
+func (b *Bot) cmdKudosMenu(i *discordgo.InteractionCreate, l *i18n.Locale, giver *discordgo.User) {
+	data := i.ApplicationCommandData()
+	if data.Resolved == nil {
+		return
+	}
+	id := kudosID{To: data.TargetID}
+	var to *discordgo.User
+	inServer := false
+	switch data.CommandType {
+	case discordgo.UserApplicationCommand:
+		to = data.Resolved.Users[data.TargetID]
+		inServer = data.Resolved.Members[data.TargetID] != nil
+	case discordgo.MessageApplicationCommand:
+		m := data.Resolved.Messages[data.TargetID]
+		if m == nil || m.Author == nil {
+			return
+		}
+		to, id = m.Author, kudosID{To: m.Author.ID, ChannelID: i.ChannelID, MessageID: m.ID}
+		if m.WebhookID != "" {
+			to = &discordgo.User{ID: m.Author.ID, Bot: true}
+		}
+		if !to.Bot { // messages don't come with their author's membership
+			_, err := b.dg.GuildMember(i.GuildID, to.ID)
+			inServer = err == nil
+		}
+	}
+	if to == nil {
+		return
+	}
+	if refusal := kudosRefusal(l, giver, to, inServer); refusal != "" {
+		b.ephemeral(i, refusal)
+		return
+	}
+	b.respond(i, discordgo.InteractionResponseModal, kudosModal(l, id, to))
+}
+
+// handleKudosModal gives the kudos written in the modal opened by cmdKudosMenu.
+func (b *Bot) handleKudosModal(ctx context.Context, i *discordgo.InteractionCreate, id kudosID, data discordgo.ModalSubmitInteractionData) {
+	l := b.userLocale(ctx, i)
+	giver := interactionUser(i)
+	message := strings.TrimSpace(modalValue(data, "message"))
+	if message == "" || i.GuildID == "" {
+		return
+	}
+	// The receiver may have left while the modal was open.
+	m, err := b.dg.GuildMember(i.GuildID, id.To)
+	if err != nil || m.User == nil {
+		b.ephemeral(i, l.T("kudos.not_in_server", "user", "<@"+id.To+">"))
+		return
+	}
+	if refusal := kudosRefusal(l, giver, m.User, true); refusal != "" {
+		b.ephemeral(i, refusal)
+		return
+	}
+	var origin *kudosOrigin
+	if id.MessageID != "" {
+		origin = &kudosOrigin{ChannelID: id.ChannelID, Link: messageLink(i.GuildID, id.ChannelID, id.MessageID)}
+	}
+	b.giveKudos(ctx, i, l, giver, m.User, message, origin)
+}
+
+// kudosRefusal is why giver can't give kudos to to, or "" if they can.
+func kudosRefusal(l *i18n.Locale, giver, to *discordgo.User, inServer bool) string {
+	switch {
+	case to.Bot:
+		return l.T("kudos.no_bots")
+	case to.ID == giver.ID:
+		return l.T("kudos.no_self")
+	case !inServer:
+		return l.T("kudos.not_in_server", "user", "<@"+to.ID+">")
+	}
+	return ""
+}
+
+// giveKudos records the kudos, posts its card and DMs the receiver. origin is the message it
+// was given from, if any.
+func (b *Bot) giveKudos(ctx context.Context, i *discordgo.InteractionCreate, l *i18n.Locale, giver, to *discordgo.User, message string, origin *kudosOrigin) {
 	g, err := b.api.Guild(ctx, i.GuildID)
 	if err != nil {
 		b.replyError(i, l, err)
@@ -72,14 +148,50 @@ func (b *Bot) cmdKudos(ctx context.Context, i *discordgo.InteractionCreate, l *i
 	}
 
 	gl := i18n.Get(g.Language)
-	card := kudosCard(gl, giver.ID, to.ID, message)
+	card := kudosCard(gl, giver.ID, to.ID, message, origin)
 	posted := b.postKudos(i, l, g, card, to.ID)
 	if posted == nil {
 		return
 	}
-	link := fmt.Sprintf("https://discord.com/channels/%s/%s/%s", i.GuildID, posted.ChannelID, posted.ID)
+	link := messageLink(i.GuildID, posted.ChannelID, posted.ID)
 	if err := b.dm(to.ID, kudosDM(gl, g, giver.ID, message, link)); err != nil {
 		b.log.Warn("kudos DM failed", "guild", i.GuildID, "user", to.ID, "err", err)
+	}
+}
+
+// kudosOrigin is the message a kudos was given from with the right-click menu.
+type kudosOrigin struct {
+	ChannelID string
+	Link      string
+}
+
+func messageLink(guildID, channelID, messageID string) string {
+	return fmt.Sprintf("https://discord.com/channels/%s/%s/%s", guildID, channelID, messageID)
+}
+
+// kudosModal asks for the kudos' text, required and up to the API's limit like the slash
+// command's option.
+func kudosModal(l *i18n.Locale, id kudosID, to *discordgo.User) *discordgo.InteractionResponseData {
+	name := to.GlobalName
+	if name == "" {
+		name = to.Username
+	}
+	title := []rune(l.T("kudos.modal_title", "user", name))
+	if len(title) > 45 { // Discord's limit
+		title = append(title[:44], '…')
+	}
+	return &discordgo.InteractionResponseData{
+		CustomID: id.String(),
+		Title:    string(title),
+		Components: []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{discordgo.TextInput{
+			CustomID:    "message",
+			Label:       l.T("kudos.modal_label"),
+			Style:       discordgo.TextInputParagraph,
+			Required:    true,
+			MinLength:   1,
+			MaxLength:   kudosMaxLength,
+			Placeholder: l.T("kudos.modal_placeholder"),
+		}}}},
 	}
 }
 
@@ -97,7 +209,7 @@ func (b *Bot) postKudos(i *discordgo.InteractionCreate, l *i18n.Locale, g api.Gu
 		b.log.Warn("kudos channel post failed", "guild", g.DiscordID, "channel", g.KudosChannelID, "err", err)
 	}
 	b.respond(i, discordgo.InteractionResponseChannelMessageWithSource, &discordgo.InteractionResponseData{
-		Embeds: card.Embeds, AllowedMentions: card.AllowedMentions,
+		Embeds: card.Embeds, Components: card.Components, AllowedMentions: card.AllowedMentions,
 	})
 	m, err := b.dg.InteractionResponse(i.Interaction)
 	if err != nil {
@@ -107,15 +219,19 @@ func (b *Bot) postKudos(i *discordgo.InteractionCreate, l *i18n.Locale, g api.Gu
 	return m
 }
 
-func kudosCard(l *i18n.Locale, fromID, toID, message string) *discordgo.MessageSend {
-	return &discordgo.MessageSend{
-		Embeds: []*discordgo.MessageEmbed{{
-			Title:       l.T("kudos.title"),
-			Description: l.T("kudos.card", "from", "<@"+fromID+">", "to", "<@"+toID+">") + "\n\n" + quote(message),
-			Color:       kudosColor,
-		}},
-		AllowedMentions: &discordgo.MessageAllowedMentions{}, // the receiver gets a DM instead
+// kudosCard is the public card. A kudos given from a message also says where it was and links
+// to it.
+func kudosCard(l *i18n.Locale, fromID, toID, message string, origin *kudosOrigin) *discordgo.MessageSend {
+	desc := l.T("kudos.card", "from", "<@"+fromID+">", "to", "<@"+toID+">") + "\n\n" + quote(message)
+	card := &discordgo.MessageSend{AllowedMentions: &discordgo.MessageAllowedMentions{}} // the receiver gets a DM instead
+	if origin != nil {
+		desc += "\n-# " + l.T("kudos.from_message", "channel", "<#"+origin.ChannelID+">")
+		card.Components = []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+			discordgo.Button{Label: l.T("kudos.see_message"), Style: discordgo.LinkButton, URL: origin.Link},
+		}}}
 	}
+	card.Embeds = []*discordgo.MessageEmbed{{Title: l.T("kudos.title"), Description: desc, Color: kudosColor}}
+	return card
 }
 
 func kudosDM(l *i18n.Locale, g api.Guild, fromID, message, link string) *discordgo.MessageSend {

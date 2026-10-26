@@ -67,13 +67,23 @@ func TestReportMessageKudos(t *testing.T) {
 
 func TestKudosMessages(t *testing.T) {
 	l := i18n.Get("es")
-	card := kudosCard(l, "200000000000000001", "200000000000000002", "gracias @everyone")
+	card := kudosCard(l, "200000000000000001", "200000000000000002", "gracias @everyone", nil)
 	e := card.Embeds[0]
 	if !strings.Contains(e.Description, "<@200000000000000001> da kudos a <@200000000000000002>") || !strings.Contains(e.Description, "> gracias @everyone") {
 		t.Fatalf("card: %q", e.Description)
 	}
 	if card.AllowedMentions == nil || len(card.AllowedMentions.Parse) != 0 {
 		t.Fatal("the card must not ping anyone")
+	}
+	if len(card.Components) != 0 || strings.Contains(e.Description, "-#") {
+		t.Fatal("a kudos from /happyx kudos has no origin")
+	}
+	card = kudosCard(l, "200000000000000001", "200000000000000002", "gracias", &kudosOrigin{ChannelID: "400000000000000002", Link: "https://discord.com/channels/1/2/3"})
+	if !strings.Contains(card.Embeds[0].Description, "\n-# Por su mensaje en <#400000000000000002>") {
+		t.Fatalf("card from a message: %q", card.Embeds[0].Description)
+	}
+	if btn := card.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.Button); btn.Style != discordgo.LinkButton || btn.URL != "https://discord.com/channels/1/2/3" {
+		t.Fatalf("card should link to the message: %+v", btn)
 	}
 	dm := kudosDM(l, api.Guild{Name: "Equipo"}, "200000000000000001", "gracias", "https://discord.com/channels/1/2/3")
 	if !strings.Contains(dm.Content, "**Equipo**") || !strings.Contains(dm.Content, "> gracias") {
@@ -248,6 +258,55 @@ func TestSurveyMessage(t *testing.T) {
 	} {
 		if got := longDate(i18n.Get(code), time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)); got != want {
 			t.Errorf("%s: got %q, want %q", code, got, want)
+		}
+	}
+}
+
+func TestKudosMenu(t *testing.T) {
+	types := map[discordgo.ApplicationCommandType]bool{}
+	for _, c := range commands()[1:] {
+		if c.Name != menuKudos || c.DMPermission == nil || *c.DMPermission {
+			t.Fatalf("menu command: %+v", c)
+		}
+		types[c.Type] = true
+	}
+	if !types[discordgo.UserApplicationCommand] || !types[discordgo.MessageApplicationCommand] {
+		t.Fatalf("want Give kudos on users and messages, got %v", types)
+	}
+	if got := i18n.Get(i18n.Default).T("menu.kudos"); got != menuKudos {
+		t.Fatalf("en.json menu.kudos = %q, want %q", got, menuKudos)
+	}
+	if got := (*localized("menu.kudos"))[discordgo.SpanishES]; got != "Dar kudos" {
+		t.Fatalf("Spanish name: %q", got)
+	}
+
+	long := &discordgo.User{ID: "200000000000000002", Username: strings.Repeat("b", 32)}
+	m := kudosModal(i18n.Get("es"), kudosID{To: long.ID}, long)
+	if n := len([]rune(m.Title)); n > 45 {
+		t.Fatalf("modal title has %d characters: %q", n, m.Title)
+	}
+	in := m.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.TextInput)
+	if !in.Required || in.MaxLength != kudosMaxLength || in.CustomID != "message" {
+		t.Fatalf("modal input: %+v", in)
+	}
+	if got := kudosModal(i18n.Get("es"), kudosID{}, &discordgo.User{Username: "bea", GlobalName: "Bea"}).Title; got != "Kudos para Bea" {
+		t.Fatalf("title: %q", got)
+	}
+
+	giver := &discordgo.User{ID: "1"}
+	l := i18n.Get("es")
+	for _, c := range []struct {
+		to       *discordgo.User
+		inServer bool
+		want     string
+	}{
+		{&discordgo.User{ID: "2", Bot: true}, true, l.T("kudos.no_bots")},
+		{&discordgo.User{ID: "1"}, true, l.T("kudos.no_self")},
+		{&discordgo.User{ID: "2"}, false, l.T("kudos.not_in_server", "user", "<@2>")},
+		{&discordgo.User{ID: "2"}, true, ""},
+	} {
+		if got := kudosRefusal(l, giver, c.to, c.inServer); got != c.want {
+			t.Errorf("refusal for %+v: %q, want %q", c.to, got, c.want)
 		}
 	}
 }
