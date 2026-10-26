@@ -177,11 +177,26 @@ func interactionUser(i *discordgo.InteractionCreate) *discordgo.User {
 
 // guildLocale is the language configured for the guild, English if it can't be read.
 func (b *Bot) guildLocale(ctx context.Context, guildID string) *i18n.Locale {
+	_, l := b.guildAndLocale(ctx, guildID)
+	return l
+}
+
+// guildAndLocale is guildLocale with the guild itself, which is empty if it can't be read.
+func (b *Bot) guildAndLocale(ctx context.Context, guildID string) (api.Guild, *i18n.Locale) {
 	g, err := b.api.Guild(ctx, guildID)
 	if err != nil {
-		return i18n.Get(i18n.Default)
+		return api.Guild{}, i18n.Get(i18n.Default)
 	}
-	return i18n.Get(g.Language)
+	return g, i18n.Get(g.Language)
+}
+
+// userName is how the server shows u, for a button pressed in a DM where Discord doesn't say.
+func (b *Bot) userName(guildID string, u *discordgo.User) string {
+	name := u.GlobalName
+	if name == "" {
+		name = u.Username
+	}
+	return b.displayName(guildID, api.Member{DiscordID: u.ID, Username: name})
 }
 
 // userLocale answers slash commands in the user's Discord language when the bot has it, and
@@ -200,15 +215,16 @@ func (b *Bot) handleSurveyButton(ctx context.Context, i *discordgo.InteractionCr
 	if !ok {
 		return
 	}
-	l := b.guildLocale(ctx, id.GuildID)
+	g, l := b.guildAndLocale(ctx, id.GuildID)
 	user := interactionUser(i)
 	switch id.Action {
 	case actionMood:
-		if err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, ""); err != nil {
+		streak, err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, "")
+		if err != nil {
 			b.replyError(i, l, err)
 			return
 		}
-		b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, id, ""))
+		b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), streak, ""))
 	case actionNote:
 		b.respond(i, discordgo.InteractionResponseModal, noteModal(l, id))
 	case actionStop:
@@ -219,6 +235,7 @@ func (b *Bot) handleSurveyButton(ctx context.Context, i *discordgo.InteractionCr
 		}
 		b.respond(i, discordgo.InteractionResponseUpdateMessage, &discordgo.InteractionResponseData{
 			Content:    l.T("stop.done", "resume_cmd", b.resumeMention()),
+			Embeds:     []*discordgo.MessageEmbed{},
 			Components: []discordgo.MessageComponent{},
 		})
 	}
@@ -230,13 +247,15 @@ func (b *Bot) handleNoteModal(ctx context.Context, i *discordgo.InteractionCreat
 	if !ok || id.Action != actionNoteModal {
 		return
 	}
-	l := b.guildLocale(ctx, id.GuildID)
+	g, l := b.guildAndLocale(ctx, id.GuildID)
 	comment := modalValue(data, "comment")
-	if err := b.api.RecordMood(ctx, id.GuildID, interactionUser(i).ID, id.Day, id.Mood, comment); err != nil {
+	user := interactionUser(i)
+	streak, err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, comment)
+	if err != nil {
 		b.replyError(i, l, err)
 		return
 	}
-	b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, id, comment))
+	b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), streak, comment))
 }
 
 func modalValue(data discordgo.ModalSubmitInteractionData, field string) string {

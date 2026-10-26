@@ -32,7 +32,12 @@ type surveyRecipient struct {
 	Streak int    // days in a row they answered
 }
 
-func surveyMessage(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) *discordgo.MessageSend {
+// surveyColor is HappyX's violet, the colour of the survey card until it's answered.
+const surveyColor = 0x8b5cf6
+
+// surveyMessage is the daily survey: a card with the question (or the admin's own message), the
+// day and the person's streak, and the mood buttons below. icon is the server's icon, if any.
+func surveyMessage(l *i18n.Locale, g api.Guild, day string, to surveyRecipient, icon string) *discordgo.MessageSend {
 	buttons := make([]discordgo.MessageComponent, 0, len(moodEmojis))
 	for i, emoji := range moodEmojis {
 		buttons = append(buttons, discordgo.Button{
@@ -46,8 +51,22 @@ func surveyMessage(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) 
 	if !g.Anonymous {
 		privacy = l.T("survey.named")
 	}
+	fields := []*discordgo.MessageEmbedField{{Name: l.T("survey.today"), Value: longDate(l, parseDay(day)), Inline: true}}
+	if f := streakField(l, to.Streak); f != nil {
+		fields = append(fields, f)
+	}
+	embed := &discordgo.MessageEmbed{
+		Author:      &discordgo.MessageEmbedAuthor{Name: l.T("survey.title", "guild", g.Name)},
+		Description: surveyText(l, g, day, to),
+		Color:       surveyColor,
+		Fields:      fields,
+		Footer:      &discordgo.MessageEmbedFooter{Text: privacy},
+	}
+	if icon != "" {
+		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: icon}
+	}
 	return &discordgo.MessageSend{
-		Content: surveyText(l, g, day, to) + "\n" + privacy,
+		Embeds: []*discordgo.MessageEmbed{embed},
 		// A custom message may hold @everyone or role mentions; they're shown but never ping.
 		AllowedMentions: &discordgo.MessageAllowedMentions{Parse: []discordgo.AllowedMentionType{}},
 		Components: []discordgo.MessageComponent{
@@ -68,15 +87,13 @@ var surveyVar = regexp.MustCompile(`\{\{\s*([a-z.]+)\s*\}\}`)
 
 // surveyText is the survey's question: the admin's own message with its variables filled in for
 // this person, as written in whatever language they wrote it, or the default text when there is
-// none. The API only accepts known variables, but an unknown one is left as written.
+// none: a greeting by name and the question. The API only accepts known variables, but an
+// unknown one is left as written.
 func surveyText(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) string {
 	if strings.TrimSpace(g.SurveyMessage) == "" {
-		return l.T("survey.question", "guild", g.Name)
+		return "### " + l.T("survey.greeting", "name", to.Name) + "\n" + l.T("survey.question")
 	}
-	d, err := time.Parse("2006-01-02", day)
-	if err != nil {
-		d = time.Now()
-	}
+	d := parseDay(day)
 	vars := map[string]string{
 		"user.name":    to.Name,
 		"user.mention": "<@" + to.ID + ">",
@@ -93,27 +110,64 @@ func surveyText(l *i18n.Locale, g api.Guild, day string, to surveyRecipient) str
 	})
 }
 
+// parseDay reads a YYYY-MM-DD day, today if it can't.
+func parseDay(day string) time.Time {
+	d, err := time.Parse("2006-01-02", day)
+	if err != nil {
+		return time.Now()
+	}
+	return d
+}
+
+// streakField shows how many days in a row someone answered, or nil before they have a streak.
+func streakField(l *i18n.Locale, n int) *discordgo.MessageEmbedField {
+	if n <= 0 {
+		return nil
+	}
+	v := l.T("survey.streak_one")
+	if n > 1 {
+		v = l.T("survey.streak_many", "n", n)
+	}
+	return &discordgo.MessageEmbedField{Name: l.T("survey.streak"), Value: v, Inline: true}
+}
+
 // longDate is d in full, like «viernes, 24 de octubre».
 func longDate(l *i18n.Locale, d time.Time) string {
 	return l.T("date.long", "weekday", l.List("date.weekdays_long")[d.Weekday()], "day", d.Day(),
 		"month", l.List("date.months_long")[d.Month()-1])
 }
 
-// answeredMessage replaces the survey once answered, offering to add a comment.
-func answeredMessage(l *i18n.Locale, id surveyID, comment string) *discordgo.InteractionResponseData {
-	content := l.T("answer.thanks", "emoji", moodEmoji(id.Mood), "day", id.Day)
+// answeredMessage replaces the survey once answered: the mood in the card's colour, the day
+// and the streak, counting this answer (0 hides it), and an offer to add a comment.
+func answeredMessage(l *i18n.Locale, g api.Guild, id surveyID, name string, streak int, comment string) *discordgo.InteractionResponseData {
+	text := "### " + l.T("answer.thanks", "emoji", moodEmoji(id.Mood), "name", name) + "\n" +
+		l.T("answer.saved", "mood", l.T(fmt.Sprintf("mood.%d", id.Mood)))
+	fields := []*discordgo.MessageEmbedField{{Name: l.T("answer.day"), Value: longDate(l, parseDay(id.Day)), Inline: true}}
+	if f := streakField(l, streak); f != nil {
+		fields = append(fields, f)
+	}
 	components := []discordgo.MessageComponent{}
 	if comment == "" {
-		content += "\n" + l.T("answer.comment_prompt")
+		text += "\n\n" + l.T("answer.comment_prompt")
 		note := id
 		note.Action = actionNote
 		components = []discordgo.MessageComponent{discordgo.ActionsRow{Components: []discordgo.MessageComponent{
 			discordgo.Button{Label: l.T("answer.comment_button"), Emoji: &discordgo.ComponentEmoji{Name: "✏️"}, Style: discordgo.PrimaryButton, CustomID: note.String()},
 		}}}
 	} else {
-		content += "\n> " + strings.ReplaceAll(comment, "\n", "\n> ")
+		text += "\n" + quote(comment)
 	}
-	return &discordgo.InteractionResponseData{Content: content, Components: components}
+	return &discordgo.InteractionResponseData{
+		Content: "", // surveys sent before the card had their text here
+		Embeds: []*discordgo.MessageEmbed{{
+			Author:      &discordgo.MessageEmbedAuthor{Name: l.T("survey.title", "guild", g.Name)},
+			Description: text,
+			Color:       moodColor(api.Report{Responses: 1, Average: float64(id.Mood)}),
+			Fields:      fields,
+		}},
+		Components:      components,
+		AllowedMentions: &discordgo.MessageAllowedMentions{},
+	}
 }
 
 func noteModal(l *i18n.Locale, id surveyID) *discordgo.InteractionResponseData {

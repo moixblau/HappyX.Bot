@@ -41,14 +41,16 @@ report. One bot serves any number of servers; their data is kept apart by
   at once; within a minute the bot leaves the server by itself.
 - **Survey**: on the server's working days (Monday to Friday by default; `/happyx config working_days`
   offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
-  five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
+  a card (greeting, the day, their answering streak, the anonymity notice, the server's icon) with
+  five buttons. After answering, the card shows their mood and updated streak, and they can add a comment. Answering again the same day replaces the answer.
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
   Admins can write their own survey text on the web (variables like `{{user.name}}`, `{{user.streak}}`
-  or `{{date}}` are filled in per person). It goes out as written; the anonymity notice and the
-  buttons are always added below it, and its mentions never ping anyone.
+  or `{{date}}` are filled in per person). It goes out as written in place of the greeting; the rest
+  of the card and the buttons are always added, and its mentions never ping anyone.
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
-- **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card is posted
+- **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card (with the
+  receiver's avatar, who gave it and the message) is posted
   in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
