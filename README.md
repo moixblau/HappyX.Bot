@@ -35,6 +35,8 @@ report. One bot serves any number of servers; their data is kept apart by
   human member (bots are ignored). New members are added as they join; members who leave are removed.
   The bot also keeps the server's roles and each member's roles in the API, so the dashboard can
   give access to a role (Settings → Admins and permissions) and that access follows who has it.
+  It also sends the server's text and announcement channels, marking where it may post, so the
+  dashboard can offer them for the kudos channel.
 - **Removing the bot** from a server stops surveys and reports and hides the server from the
   dashboard. The API keeps its data for 30 days in case the bot is added back, then deletes it.
 - **Deleting a server on the dashboard** (Settings → Delete server from HappyX) deletes all its data
@@ -49,7 +51,7 @@ report. One bot serves any number of servers; their data is kept apart by
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
 - **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card is posted
-  in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
+  in the kudos channel (`/happyx config kudos_channel` or the dashboard's settings) or, without one, where the command was used,
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
   since they are public anyway.
