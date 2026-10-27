@@ -78,7 +78,7 @@ func (b *Bot) Run(ctx context.Context) error {
 func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 	b.log.Info("connected", "user", r.User.Username, "guilds", len(r.Guilds))
 	// One status for every server, so it stays in English.
-	if err := s.UpdateCustomStatus("💙 How are you today? · /happyx"); err != nil {
+	if err := s.UpdateCustomStatus("💜 How are you today? · /happyx"); err != nil {
 		b.log.Warn("set status", "err", err)
 	}
 	cmds, err := s.ApplicationCommandBulkOverwrite(r.User.ID, "", commands())
