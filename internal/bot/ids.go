@@ -52,3 +52,34 @@ func parseSurveyID(v string) (surveyID, bool) {
 	}
 	return surveyID{Action: p[1], GuildID: p[2], Day: p[3], Mood: mood}, true
 }
+
+// kudosID is the custom ID of the modal opened by "Give kudos" in the right-click menu. It
+// carries the receiver and, when given from a message, where that message is. The giver and
+// the guild come from the interaction itself.
+type kudosID struct {
+	To        string
+	ChannelID string // empty unless given from a message
+	MessageID string
+}
+
+const kudosPrefix = "hxk"
+
+func (k kudosID) String() string {
+	return fmt.Sprintf("%s:%s:%s:%s", kudosPrefix, k.To, k.ChannelID, k.MessageID)
+}
+
+func parseKudosID(v string) (kudosID, bool) {
+	p := strings.Split(v, ":")
+	if len(p) != 4 || p[0] != kudosPrefix || !snowflake(p[1]) {
+		return kudosID{}, false
+	}
+	if (p[2] == "") != (p[3] == "") || (p[2] != "" && (!snowflake(p[2]) || !snowflake(p[3]))) {
+		return kudosID{}, false
+	}
+	return kudosID{To: p[1], ChannelID: p[2], MessageID: p[3]}, true
+}
+
+func snowflake(s string) bool {
+	_, err := strconv.ParseUint(s, 10, 64)
+	return err == nil
+}

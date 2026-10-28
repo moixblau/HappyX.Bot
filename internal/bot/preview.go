@@ -30,6 +30,7 @@ const (
 	PreviewGuildIcon = "https://cdn.example/guild.png"
 	PreviewAvatarAna = "https://cdn.example/ana.png"
 	PreviewAvatarBea = "https://cdn.example/bea.png"
+	PreviewGeneralID = "400000000000000002"
 )
 
 // Previews builds every scene in language code.
@@ -72,7 +73,9 @@ func Previews(code string) []Preview {
 		{Title: "Daily survey with the admin's own message", Channel: "DM", Msg: surveyMessage(l, custom, day, ana, PreviewGuildIcon)},
 		{Title: "After answering", Channel: "DM", Msg: data(answered)},
 		{Title: "After adding a comment", Channel: "DM", Msg: data(commented)},
-		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, anaP, beaP, kudosMsg)},
+		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, anaP, beaP, kudosMsg, nil)},
+		{Title: "Kudos card from a message (right-click › Apps)", Channel: "#kudos", Command: menuKudos,
+			Msg: kudosCard(l, anaP, beaP, kudosMsg, &kudosOrigin{ChannelID: PreviewGeneralID, Link: link})},
 		{Title: "Kudos confirmation", Channel: "#general", Command: "/happyx kudos", Ephemeral: true,
 			Msg: &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{kudosSent(l, PreviewBeaID, PreviewChannelID)}}},
 		{Title: "Kudos DM to the receiver", Channel: "DM", Msg: kudosDM(l, g, anaP, kudosMsg, link, "kudos")},

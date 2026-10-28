@@ -23,6 +23,9 @@ const (
 	cmdConfig = "config"
 	cmdKudos  = "kudos"
 
+	// menuKudos is the right-click "Give kudos" on a user or a message; en.json's menu.kudos.
+	menuKudos = "Give kudos"
+
 	optAnonymous = "anonymous"
 	optHour      = "hour"
 	optTimezone  = "timezone"
@@ -99,6 +102,10 @@ func commands() []*discordgo.ApplicationCommand {
 		})
 	}
 
+	kudosMenu := func(t discordgo.ApplicationCommandType) *discordgo.ApplicationCommand {
+		return &discordgo.ApplicationCommand{Type: t, Name: menuKudos, NameLocalizations: localized("menu.kudos"), DMPermission: &no}
+	}
+
 	return []*discordgo.ApplicationCommand{{
 		Name:                     "happyx",
 		Description:              en.T("cmd.description"),
@@ -122,7 +129,7 @@ func commands() []*discordgo.ApplicationCommand {
 				workingDays,
 			),
 		},
-	}}
+	}, kudosMenu(discordgo.UserApplicationCommand), kudosMenu(discordgo.MessageApplicationCommand)}
 }
 
 // localized builds Discord's per-locale map for key from every catalog that claims a Discord
@@ -162,6 +169,10 @@ func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate
 		}
 		if id, ok := parseGameID(data.CustomID); ok && id.Action == gameProposeModal {
 			b.handleProposeModal(ctx, i, id, data)
+			return
+		}
+		if id, ok := parseKudosID(data.CustomID); ok {
+			b.handleKudosModal(ctx, i, id, data)
 			return
 		}
 		b.handleNoteModal(ctx, i)
@@ -277,6 +288,10 @@ func modalValue(data discordgo.ModalSubmitInteractionData, field string) string 
 
 func (b *Bot) handleCommand(ctx context.Context, i *discordgo.InteractionCreate) {
 	data := i.ApplicationCommandData()
+	if data.Name == menuKudos && i.GuildID != "" {
+		b.cmdKudosMenu(i, b.userLocale(ctx, i), interactionUser(i))
+		return
+	}
 	if data.Name != "happyx" || len(data.Options) == 0 || i.GuildID == "" {
 		return
 	}

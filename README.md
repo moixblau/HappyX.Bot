@@ -49,8 +49,10 @@ report. One bot serves any number of servers; their data is kept apart by
   of the card and the buttons are always added, and its mentions never ping anyone.
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
-- **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. The card (with the
-  receiver's avatar, who gave it and the message) is posted
+- **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. **Give kudos** in
+  Discord's right-click Apps menu does the same from a user or a message (to its author), asking for
+  the text in a form; from a message, the card also links to it. The card (with the receiver's
+  avatar, who gave it and the message) is posted
   in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
@@ -77,6 +79,7 @@ report. One bot serves any number of servers; their data is kept apart by
 | `/happyx status` | everyone | settings and whether you receive the survey |
 | `/happyx pause` / `/happyx resume` | everyone | stop / resume receiving the survey in this server |
 | `/happyx kudos` | everyone | `user`, `message` (≤300): publicly thank a teammate |
+| Apps › **Give kudos** | everyone | right-click a user or a message: the same kudos, text written in a form |
 | `/happyx config` | manage | `anonymous`, `hour`, `timezone`, `frequency`, `language`, `admin`, `kudos_channel`, `working_days`, `games` |
 | `/happyx report` | view | see the last completed period's report now, or the one in progress with `period:current` |
 
