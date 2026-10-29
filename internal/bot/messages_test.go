@@ -221,18 +221,18 @@ func TestAnsweredMessage(t *testing.T) {
 	es := i18n.Get("es")
 	g := api.Guild{Name: "Equipo"}
 	id := surveyID{Action: actionMood, GuildID: "1", Day: "2026-10-23", Mood: 4}
-	a := answeredMessage(es, g, id, "Ana", 6, "")
+	a := answeredMessage(es, g, id, "Ana", "")
 	e := a.Embeds[0]
 	if a.Content != "" || e.Description != "### 🙂 ¡Gracias, Ana!\nApuntado: **Bien**.\n\n¿Quieres añadir un comentario? Es opcional." {
 		t.Fatalf("answered: %q %q", a.Content, e.Description)
 	}
-	if len(e.Fields) != 2 || e.Fields[0].Value != "viernes, 23 de octubre" || e.Fields[1].Value != "6 días" || len(a.Components) != 1 {
+	if len(e.Fields) != 0 || len(a.Components) != 1 {
 		t.Fatalf("answered fields or button: %+v %+v", e.Fields, a.Components)
 	}
-	// With a comment there's no button, and an API that didn't count the streak hides it.
-	a = answeredMessage(es, g, id, "Ana", 0, "buena semana\ny tanto")
-	if e := a.Embeds[0]; !strings.HasSuffix(e.Description, "\n> buena semana\n> y tanto") || len(e.Fields) != 1 || len(a.Components) != 0 {
-		t.Fatalf("commented: %q %+v %+v", e.Description, e.Fields, a.Components)
+	// With a comment there's no button.
+	a = answeredMessage(es, g, id, "Ana", "buena semana\ny tanto")
+	if e := a.Embeds[0]; !strings.HasSuffix(e.Description, "\n> buena semana\n> y tanto") || len(a.Components) != 0 {
+		t.Fatalf("commented: %q %+v", e.Description, a.Components)
 	}
 }
 
@@ -265,28 +265,24 @@ func TestSurveyMessage(t *testing.T) {
 	ana := surveyRecipient{ID: "2", Name: "Ana", Streak: 5}
 
 	// No custom message: a greeting and the question in the guild's language, on a card with
-	// the server, the day, the streak and the privacy notice.
+	// the server and the privacy notice.
 	def := surveyMessage(es, g, "2026-10-23", ana, "https://cdn/icon.png")
 	e := def.Embeds[0]
 	if e.Description != "### 👋 ¡Hola, Ana!\n¿Cómo te encuentras hoy?" || e.Author.Name != "Equipo · Encuesta diaria" {
 		t.Fatalf("default: %q %q", e.Description, e.Author.Name)
 	}
-	if e.Thumbnail == nil || e.Thumbnail.URL != "https://cdn/icon.png" || e.Footer.Text != es.T("survey.anonymous") {
-		t.Fatalf("icon or notice: %+v %+v", e.Thumbnail, e.Footer)
+	if e.Thumbnail == nil || e.Thumbnail.URL != "https://cdn/icon.png" || e.Footer.Text != "🔒 Respuesta anónima" || len(e.Fields) != 0 {
+		t.Fatalf("icon, notice or fields: %+v %+v %+v", e.Thumbnail, e.Footer, e.Fields)
 	}
-	if len(e.Fields) != 2 || e.Fields[0].Value != "viernes, 23 de octubre" || e.Fields[1].Value != "5 días" {
-		t.Fatalf("fields: %+v", e.Fields)
+	// The mood buttons show just their emoji.
+	for _, c := range def.Components[0].(discordgo.ActionsRow).Components {
+		if btn := c.(discordgo.Button); btn.Label != "" || btn.Emoji == nil {
+			t.Fatalf("mood button: %+v", btn)
+		}
 	}
-	// No streak yet, or a streak of one, and no server icon.
-	ana.Streak = 0
-	if e := surveyMessage(es, g, "2026-10-23", ana, "").Embeds[0]; len(e.Fields) != 1 || e.Thumbnail != nil {
-		t.Fatalf("no streak: %+v %+v", e.Fields, e.Thumbnail)
+	if e := surveyMessage(es, g, "2026-10-23", ana, "").Embeds[0]; e.Thumbnail != nil {
+		t.Fatalf("no icon: %+v", e.Thumbnail)
 	}
-	ana.Streak = 1
-	if e := surveyMessage(es, g, "2026-10-23", ana, "").Embeds[0]; e.Fields[1].Value != "1 día" {
-		t.Fatalf("one day: %+v", e.Fields[1])
-	}
-	ana.Streak = 5
 
 	g.SurveyMessage = "Hola {{user.name}} ({{ user.mention }}), {{weekday}} — {{date}} en {{guild.name}}: {{user.streak}} días. {{user.nope}} @everyone"
 	msg := surveyMessage(es, g, "2026-10-23", ana, "")

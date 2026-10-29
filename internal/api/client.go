@@ -276,7 +276,7 @@ func (c *Client) Members(ctx context.Context, guildID string) ([]Member, error) 
 }
 
 // SurveyRecipients is Members without those the server's survey roles leave out of the daily
-// survey. withStreak adds each member's answering streak, shown on the survey.
+// survey. withStreak adds each member's answering streak, for {{user.streak}}.
 func (c *Client) SurveyRecipients(ctx context.Context, guildID string, withStreak bool) ([]Member, error) {
 	path := "/v1/guilds/" + url.PathEscape(guildID) + "/members?for=survey"
 	if withStreak {
@@ -294,16 +294,10 @@ func (c *Client) GamePlayers(ctx context.Context, guildID string) ([]Member, err
 	return ms, err
 }
 
-// RecordMood saves an answer and returns how many days in a row they have answered, counting
-// this one (0 when the API couldn't count it).
-func (c *Client) RecordMood(ctx context.Context, guildID, userID, day string, mood int, message string) (int, error) {
-	var out struct {
-		Streak int `json:"streak"`
-	}
-	err := c.do(ctx, http.MethodPut, memberPath(guildID, userID)+"/mood", map[string]any{
+func (c *Client) RecordMood(ctx context.Context, guildID, userID, day string, mood int, message string) error {
+	return c.do(ctx, http.MethodPut, memberPath(guildID, userID)+"/mood", map[string]any{
 		"mood": mood, "message": message, "day": day,
-	}, &out)
-	return out.Streak, err
+	}, nil)
 }
 
 // GiveKudos records kudos from one member to another. It fails with ErrForbidden when either

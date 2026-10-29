@@ -41,8 +41,8 @@ report. One bot serves any number of servers; their data is kept apart by
   at once; within a minute the bot leaves the server by itself.
 - **Survey**: on the server's working days (Monday to Friday by default; `/happyx config working_days`
   offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
-  a card (greeting, the day, their answering streak, the anonymity notice, the server's icon) with
-  five buttons. After answering, the card shows their mood and updated streak, and they can add a comment. Answering again the same day replaces the answer.
+  a card (greeting, the anonymity notice, the server's icon) with five emoji buttons. After
+  answering, the card shows their mood, and they can add a comment. Answering again the same day replaces the answer.
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
   Admins can write their own survey text on the web (variables like `{{user.name}}`, `{{user.streak}}`
   or `{{date}}` are filled in per person). It goes out as written in place of the greeting; the rest

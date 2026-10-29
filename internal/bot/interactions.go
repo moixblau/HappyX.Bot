@@ -230,12 +230,11 @@ func (b *Bot) handleSurveyButton(ctx context.Context, i *discordgo.InteractionCr
 	user := interactionUser(i)
 	switch id.Action {
 	case actionMood:
-		streak, err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, "")
-		if err != nil {
+		if err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, ""); err != nil {
 			b.replyError(i, l, err)
 			return
 		}
-		b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), streak, ""))
+		b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), ""))
 	case actionNote:
 		b.respond(i, discordgo.InteractionResponseModal, noteModal(l, id))
 	case actionStop:
@@ -261,12 +260,11 @@ func (b *Bot) handleNoteModal(ctx context.Context, i *discordgo.InteractionCreat
 	g, l := b.guildAndLocale(ctx, id.GuildID)
 	comment := modalValue(data, "comment")
 	user := interactionUser(i)
-	streak, err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, comment)
-	if err != nil {
+	if err := b.api.RecordMood(ctx, id.GuildID, user.ID, id.Day, id.Mood, comment); err != nil {
 		b.replyError(i, l, err)
 		return
 	}
-	b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), streak, comment))
+	b.respond(i, discordgo.InteractionResponseUpdateMessage, answeredMessage(l, g, id, b.userName(id.GuildID, user), comment))
 }
 
 func modalValue(data discordgo.ModalSubmitInteractionData, field string) string {

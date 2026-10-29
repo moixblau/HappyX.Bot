@@ -51,8 +51,8 @@ func Previews(code string) []Preview {
 	kudosMsg := "Gracias por echarme un cable con el despliegue del viernes, sin ti no llegábamos 🚀"
 	link := "https://discord.com/channels/" + PreviewGuildID + "/" + PreviewChannelID + "/1"
 
-	answered := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", 6, "")
-	commented := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", 6, "Semana intensa pero buen ambiente")
+	answered := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", "")
+	commented := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", "Semana intensa pero buen ambiente")
 	anaP := kudosPerson{ID: PreviewAnaID, Name: "Ana", Avatar: PreviewAvatarAna}
 	beaP := kudosPerson{ID: PreviewBeaID, Name: "Bea", Avatar: PreviewAvatarBea}
 

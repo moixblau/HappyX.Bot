@@ -324,7 +324,7 @@ func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, se
 }
 
 func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) (delivery, error) {
-	members, err := b.api.SurveyRecipients(ctx, g.DiscordID, true)
+	members, err := b.api.SurveyRecipients(ctx, g.DiscordID, strings.Contains(g.SurveyMessage, "user.streak"))
 	if err != nil {
 		return delivery{}, err
 	}
