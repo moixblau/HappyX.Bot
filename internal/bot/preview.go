@@ -26,6 +26,10 @@ const (
 	PreviewAnaID     = "200000000000000001"
 	PreviewBeaID     = "200000000000000002"
 	PreviewChannelID = "400000000000000001"
+	// Images the previews point at; cmd/preview draws them as placeholders.
+	PreviewGuildIcon = "https://cdn.example/guild.png"
+	PreviewAvatarAna = "https://cdn.example/ana.png"
+	PreviewAvatarBea = "https://cdn.example/bea.png"
 	PreviewGeneralID = "400000000000000002"
 )
 
@@ -47,8 +51,10 @@ func Previews(code string) []Preview {
 	kudosMsg := "Gracias por echarme un cable con el despliegue del viernes, sin ti no llegábamos 🚀"
 	link := "https://discord.com/channels/" + PreviewGuildID + "/" + PreviewChannelID + "/1"
 
-	answered := answeredMessage(l, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "")
-	commented := answeredMessage(l, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Semana intensa pero buen ambiente")
+	answered := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", "")
+	commented := answeredMessage(l, g, surveyID{Action: actionMood, GuildID: g.DiscordID, Day: day, Mood: 4}, "Ana", "Semana intensa pero buen ambiente")
+	anaP := kudosPerson{ID: PreviewAnaID, Name: "Ana", Avatar: PreviewAvatarAna}
+	beaP := kudosPerson{ID: PreviewBeaID, Name: "Bea", Avatar: PreviewAvatarBea}
 
 	week := "2026-10-19"
 	question := gameQuestion(l, week)
@@ -63,16 +69,16 @@ func Previews(code string) []Preview {
 	}
 
 	return []Preview{
-		{Title: "Daily survey", Channel: "DM", Msg: surveyMessage(l, g, day, ana)},
-		{Title: "Daily survey with the admin's own message", Channel: "DM", Msg: surveyMessage(l, custom, day, ana)},
+		{Title: "Daily survey", Channel: "DM", Msg: surveyMessage(l, g, day, ana, PreviewGuildIcon)},
+		{Title: "Daily survey with the admin's own message", Channel: "DM", Msg: surveyMessage(l, custom, day, ana, PreviewGuildIcon)},
 		{Title: "After answering", Channel: "DM", Msg: data(answered)},
 		{Title: "After adding a comment", Channel: "DM", Msg: data(commented)},
-		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg, nil)},
+		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, anaP, beaP, kudosMsg, nil)},
 		{Title: "Kudos card from a message (right-click › Apps)", Channel: "#kudos", Command: menuKudos,
-			Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg, &kudosOrigin{ChannelID: PreviewGeneralID, Link: link})},
+			Msg: kudosCard(l, anaP, beaP, kudosMsg, &kudosOrigin{ChannelID: PreviewGeneralID, Link: link})},
 		{Title: "Kudos confirmation", Channel: "#general", Command: "/happyx kudos", Ephemeral: true,
-			Msg: text(l.T("kudos.sent", "to", "<@"+PreviewBeaID+">", "channel", "<#"+PreviewChannelID+">"))},
-		{Title: "Kudos DM to the receiver", Channel: "DM", Msg: kudosDM(l, g, PreviewAnaID, kudosMsg, link)},
+			Msg: &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{kudosSent(l, PreviewBeaID, PreviewChannelID)}}},
+		{Title: "Kudos DM to the receiver", Channel: "DM", Msg: kudosDM(l, g, anaP, kudosMsg, link, "kudos")},
 		{Title: "Kudos to yourself", Channel: "#general", Command: "/happyx kudos", Ephemeral: true, Msg: text(l.T("kudos.no_self"))},
 		{Title: "Kudos to a bot", Channel: "#general", Command: "/happyx kudos", Ephemeral: true, Msg: text(l.T("kudos.no_bots"))},
 		{Title: "Kudos daily limit", Channel: "#general", Command: "/happyx kudos", Ephemeral: true, Msg: text(l.T("kudos.too_many"))},

@@ -377,9 +377,18 @@ func (b *Bot) sendSurvey(ctx context.Context, g api.Guild, day string) (delivery
 		return delivery{}, err
 	}
 	l := i18n.Get(g.Language)
+	icon := b.guildIcon(g.DiscordID)
 	return b.dmEach(g, members, func(m api.Member) *discordgo.MessageSend {
-		return surveyMessage(l, g, day, surveyRecipient{ID: m.DiscordID, Name: b.displayName(g.DiscordID, m), Streak: m.Streak})
+		return surveyMessage(l, g, day, surveyRecipient{ID: m.DiscordID, Name: b.displayName(g.DiscordID, m), Streak: m.Streak}, icon)
 	}, "survey")
+}
+
+// guildIcon is the server's icon URL, or empty when it has none or isn't cached.
+func (b *Bot) guildIcon(guildID string) string {
+	if g, err := b.dg.State.Guild(guildID); err == nil {
+		return g.IconURL("256")
+	}
+	return ""
 }
 
 // displayName is the member's name as the server shows it: their server nickname, else their
