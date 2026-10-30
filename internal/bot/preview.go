@@ -26,6 +26,7 @@ const (
 	PreviewAnaID     = "200000000000000001"
 	PreviewBeaID     = "200000000000000002"
 	PreviewChannelID = "400000000000000001"
+	PreviewGeneralID = "400000000000000002"
 )
 
 // Previews builds every scene in language code.
@@ -66,7 +67,9 @@ func Previews(code string) []Preview {
 		{Title: "Daily survey with the admin's own message", Channel: "DM", Msg: surveyMessage(l, custom, day, ana)},
 		{Title: "After answering", Channel: "DM", Msg: data(answered)},
 		{Title: "After adding a comment", Channel: "DM", Msg: data(commented)},
-		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg)},
+		{Title: "Kudos card", Channel: "#kudos", Command: "/happyx kudos", Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg, nil)},
+		{Title: "Kudos card from a message (right-click › Apps)", Channel: "#kudos", Command: menuKudos,
+			Msg: kudosCard(l, PreviewAnaID, PreviewBeaID, kudosMsg, &kudosOrigin{ChannelID: PreviewGeneralID, Link: link})},
 		{Title: "Kudos confirmation", Channel: "#general", Command: "/happyx kudos", Ephemeral: true,
 			Msg: text(l.T("kudos.sent", "to", "<@"+PreviewBeaID+">", "channel", "<#"+PreviewChannelID+">"))},
 		{Title: "Kudos DM to the receiver", Channel: "DM", Msg: kudosDM(l, g, PreviewAnaID, kudosMsg, link)},

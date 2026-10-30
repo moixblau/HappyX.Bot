@@ -21,3 +21,23 @@ func TestSurveyIDRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+func TestKudosID(t *testing.T) {
+	for _, id := range []kudosID{
+		{To: "200000000000000002"},
+		{To: "200000000000000002", ChannelID: "400000000000000002", MessageID: "500000000000000001"},
+	} {
+		got, ok := parseKudosID(id.String())
+		if !ok || got != id {
+			t.Errorf("round trip %+v: %+v %v", id, got, ok)
+		}
+	}
+	for _, bad := range []string{"", "hxk", "hxk:abc::", "hxk:2:3:", "hxk:2::4", "hx:2::", "hxk:2:3:x"} {
+		if _, ok := parseKudosID(bad); ok {
+			t.Errorf("%q should not parse", bad)
+		}
+	}
+	if _, ok := parseSurveyID(kudosID{To: "2"}.String()); ok {
+		t.Error("a kudos ID must not parse as a survey ID")
+	}
+}

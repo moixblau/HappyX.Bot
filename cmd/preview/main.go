@@ -34,6 +34,7 @@ var names = map[string]string{
 	bot.PreviewAnaID:     "ana",
 	bot.PreviewBeaID:     "bea",
 	bot.PreviewChannelID: "kudos",
+	bot.PreviewGeneralID: "general",
 }
 
 func main() {
