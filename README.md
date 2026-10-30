@@ -35,6 +35,8 @@ report. One bot serves any number of servers; their data is kept apart by
   human member (bots are ignored). New members are added as they join; members who leave are removed.
   The bot also keeps the server's roles and each member's roles in the API, so the dashboard can
   give access to a role (Settings → Admins and permissions) and that access follows who has it.
+  It also sends the server's text and announcement channels, marking where it may post, so the
+  dashboard can offer them for the kudos channel.
 - **Removing the bot** from a server stops surveys and reports and hides the server from the
   dashboard. The API keeps its data for 30 days in case the bot is added back, then deletes it.
 - **Deleting a server on the dashboard** (Settings → Delete server from HappyX) deletes all its data
@@ -53,7 +55,7 @@ report. One bot serves any number of servers; their data is kept apart by
   Discord's right-click Apps menu does the same from a user or a message (to its author), asking for
   the text in a form; from a message, the card also links to it. The card (with the receiver's
   avatar, who gave it and the message) is posted
-  in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
+  in the kudos channel (`/happyx config kudos_channel` or the dashboard's settings) or, without one, where the command was used,
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
   since they are public anyway.
@@ -66,7 +68,8 @@ report. One bot serves any number of servers; their data is kept apart by
   enough answers to guess): until Sunday each member can propose next week's question, and on
   Monday the API draws one of them. With no proposals, questions rotate weekly from `game.q.*` in
   the locales. Turned on mid-week, the game starts that same week until Wednesday.
-- The API records each survey and report it has sent, so restarts never send twice.
+- The API records each survey and report it has sent, so restarts never send twice. A send
+  that reached nobody (the API or Discord failed) is tried again 5 minutes later, up to 3 tries.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 - **Languages**: each server has a language (English by default, set with `/happyx config language`).
   Surveys, answers and reports use it. Slash command names and replies follow each user's Discord

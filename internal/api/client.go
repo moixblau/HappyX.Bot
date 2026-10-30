@@ -247,6 +247,23 @@ func (c *Client) SyncRoles(ctx context.Context, guildID string, roles []Role) er
 	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/roles", map[string]any{"roles": roles}, nil)
 }
 
+type Channel struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Position int    `json:"position"` // order in Discord's channel list
+	CanPost  bool   `json:"can_post"`
+}
+
+// SyncChannels replaces the server's text and announcement channels, which the dashboard offers
+// for the kudos channel.
+func (c *Client) SyncChannels(ctx context.Context, guildID string, channels []Channel) error {
+	if channels == nil {
+		channels = []Channel{}
+	}
+	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/channels", map[string]any{"channels": channels}, nil)
+}
+
 // Access levels, from least to most.
 const (
 	AccessNone   = "none"
@@ -328,6 +345,11 @@ func (c *Client) ClaimDispatch(ctx context.Context, guildID, kind, period string
 func (c *Client) FinishDispatch(ctx context.Context, guildID, kind, period string, recipients, failed int) error {
 	return c.do(ctx, http.MethodPut, "/v1/guilds/"+url.PathEscape(guildID)+"/dispatches/"+url.PathEscape(kind)+"/"+url.PathEscape(period),
 		map[string]int{"recipients": recipients, "failed": failed}, nil)
+}
+
+// ReleaseDispatch gives back a claimed send that reached nobody, so a later claim can retry it.
+func (c *Client) ReleaseDispatch(ctx context.Context, guildID, kind, period string) error {
+	return c.do(ctx, http.MethodDelete, "/v1/guilds/"+url.PathEscape(guildID)+"/dispatches/"+url.PathEscape(kind)+"/"+url.PathEscape(period), nil, nil)
 }
 
 // Report returns the report for [from, to]; empty strings mean the last complete period.
