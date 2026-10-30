@@ -35,23 +35,27 @@ report. One bot serves any number of servers; their data is kept apart by
   human member (bots are ignored). New members are added as they join; members who leave are removed.
   The bot also keeps the server's roles and each member's roles in the API, so the dashboard can
   give access to a role (Settings → Admins and permissions) and that access follows who has it.
+  It also sends the server's text and announcement channels, marking where it may post, so the
+  dashboard can offer them for the kudos channel.
 - **Removing the bot** from a server stops surveys and reports and hides the server from the
   dashboard. The API keeps its data for 30 days in case the bot is added back, then deletes it.
 - **Deleting a server on the dashboard** (Settings → Delete server from HappyX) deletes all its data
   at once; within a minute the bot leaves the server by itself.
 - **Survey**: on the server's working days (Monday to Friday by default; `/happyx config working_days`
   offers common sets, the web any days), from the configured hour (default 13:00 Europe/Madrid) the bot DMs every active member
-  five buttons. After answering, they can add a comment. Answering again the same day replaces the answer.
+  a card (greeting, the anonymity notice, the server's icon) with five emoji buttons. After
+  answering, the card shows their mood, and they can add a comment. Answering again the same day replaces the answer.
   A **Don't ask me again** button under the survey stops it for that server (same as `/happyx pause`).
   Admins can write their own survey text on the web (variables like `{{user.name}}`, `{{user.streak}}`
-  or `{{date}}` are filled in per person). It goes out as written; the anonymity notice and the
-  buttons are always added below it, and its mentions never ping anyone.
+  or `{{date}}` are filled in per person). It goes out as written in place of the greeting; the rest
+  of the card and the buttons are always added, and its mentions never ping anyone.
 - **Report**: on Mondays (weekly) or the 1st (monthly), from the survey hour, the admin gets the
   last period by DM as an image (average, daily trend, distribution) plus the comments as text.
 - **Kudos**: `/happyx kudos user:@someone message:...` thanks a teammate in public. **Give kudos** in
   Discord's right-click Apps menu does the same from a user or a message (to its author), asking for
-  the text in a form; from a message, the card also links to it. The card is posted
-  in the kudos channel (`/happyx config kudos_channel`) or, without one, where the command was used,
+  the text in a form; from a message, the card also links to it. The card (with the receiver's
+  avatar, who gave it and the message) is posted
+  in the kudos channel (`/happyx config kudos_channel` or the dashboard's settings) or, without one, where the command was used,
   and the receiver gets a DM linking to it. No kudos to bots or to yourself, and at most 10 a day each.
   Reports count them and quote the latest five; kudos keep their names even in anonymous servers,
   since they are public anyway.
@@ -64,7 +68,8 @@ report. One bot serves any number of servers; their data is kept apart by
   enough answers to guess): until Sunday each member can propose next week's question, and on
   Monday the API draws one of them. With no proposals, questions rotate weekly from `game.q.*` in
   the locales. Turned on mid-week, the game starts that same week until Wednesday.
-- The API records each survey and report it has sent, so restarts never send twice.
+- The API records each survey and report it has sent, so restarts never send twice. A send
+  that reached nobody (the API or Discord failed) is tried again 5 minutes later, up to 3 tries.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 - **Languages**: each server has a language (English by default, set with `/happyx config language`).
   Surveys, answers and reports use it. Slash command names and replies follow each user's Discord

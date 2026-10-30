@@ -67,10 +67,18 @@ func TestReportMessageKudos(t *testing.T) {
 
 func TestKudosMessages(t *testing.T) {
 	l := i18n.Get("es")
-	card := kudosCard(l, "200000000000000001", "200000000000000002", "gracias @everyone", nil)
+	ana := kudosPerson{ID: "200000000000000001", Name: "Ana", Avatar: "https://cdn/ana.png"}
+	bea := kudosPerson{ID: "200000000000000002", Name: "Bea", Avatar: "https://cdn/bea.png"}
+	card := kudosCard(l, ana, bea, "gracias @everyone", nil)
 	e := card.Embeds[0]
-	if !strings.Contains(e.Description, "<@200000000000000001> da kudos a <@200000000000000002>") || !strings.Contains(e.Description, "> gracias @everyone") {
-		t.Fatalf("card: %q", e.Description)
+	if e.Title != "🎉 ¡Kudos para Bea!" || e.Description != "> gracias @everyone" || e.Thumbnail == nil || e.Thumbnail.URL != bea.Avatar {
+		t.Fatalf("card: %+v", e)
+	}
+	if len(e.Fields) != 2 || e.Fields[0].Value != "<@200000000000000001>" || e.Fields[1].Value != "<@200000000000000002>" {
+		t.Fatalf("card fields: %+v %+v", e.Fields[0], e.Fields[1])
+	}
+	if e.Footer == nil || e.Footer.Text != "🙌 Da los tuyos con /happyx kudos" {
+		t.Fatalf("card footer: %+v", e.Footer)
 	}
 	if card.AllowedMentions == nil || len(card.AllowedMentions.Parse) != 0 {
 		t.Fatal("the card must not ping anyone")
@@ -78,20 +86,26 @@ func TestKudosMessages(t *testing.T) {
 	if len(card.Components) != 0 || strings.Contains(e.Description, "-#") {
 		t.Fatal("a kudos from /happyx kudos has no origin")
 	}
-	card = kudosCard(l, "200000000000000001", "200000000000000002", "gracias", &kudosOrigin{ChannelID: "400000000000000002", Link: "https://discord.com/channels/1/2/3"})
+	card = kudosCard(l, ana, bea, "gracias", &kudosOrigin{ChannelID: "400000000000000002", Link: "https://discord.com/channels/1/2/3"})
 	if !strings.Contains(card.Embeds[0].Description, "\n-# Por su mensaje en <#400000000000000002>") {
 		t.Fatalf("card from a message: %q", card.Embeds[0].Description)
 	}
 	if btn := card.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.Button); btn.Style != discordgo.LinkButton || btn.URL != "https://discord.com/channels/1/2/3" {
 		t.Fatalf("card should link to the message: %+v", btn)
 	}
-	dm := kudosDM(l, api.Guild{Name: "Equipo"}, "200000000000000001", "gracias", "https://discord.com/channels/1/2/3")
-	if !strings.Contains(dm.Content, "**Equipo**") || !strings.Contains(dm.Content, "> gracias") {
-		t.Fatalf("dm: %q", dm.Content)
+	dm := kudosDM(l, api.Guild{Name: "Equipo"}, ana, "gracias", "https://discord.com/channels/1/2/3", "kudos")
+	d := dm.Embeds[0]
+	if d.Description != "> gracias" || d.Thumbnail.URL != ana.Avatar || d.Fields[1].Value != "Equipo" {
+		t.Fatalf("dm: %+v", d)
 	}
 	btn := dm.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.Button)
-	if btn.Style != discordgo.LinkButton || btn.URL != "https://discord.com/channels/1/2/3" {
+	if btn.Style != discordgo.LinkButton || btn.URL != "https://discord.com/channels/1/2/3" || btn.Label != "Verlo en #kudos" {
 		t.Fatalf("dm should link to the card: %+v", btn)
+	}
+	// Without the channel's name, and without avatars.
+	dm = kudosDM(l, api.Guild{Name: "Equipo"}, kudosPerson{ID: "1", Name: "x"}, "gracias", "https://x", "")
+	if btn := dm.Components[0].(discordgo.ActionsRow).Components[0].(discordgo.Button); btn.Label != "Verlo en el servidor" || dm.Embeds[0].Thumbnail != nil {
+		t.Fatalf("fallbacks: %+v %+v", btn, dm.Embeds[0].Thumbnail)
 	}
 }
 
@@ -203,6 +217,25 @@ func TestPreviews(t *testing.T) {
 	}
 }
 
+func TestAnsweredMessage(t *testing.T) {
+	es := i18n.Get("es")
+	g := api.Guild{Name: "Equipo"}
+	id := surveyID{Action: actionMood, GuildID: "1", Day: "2026-10-23", Mood: 4}
+	a := answeredMessage(es, g, id, "Ana", "")
+	e := a.Embeds[0]
+	if a.Content != "" || e.Description != "### 🙂 ¡Gracias, Ana!\nApuntado: **Bien**.\n\n¿Quieres añadir un comentario? Es opcional." {
+		t.Fatalf("answered: %q %q", a.Content, e.Description)
+	}
+	if len(e.Fields) != 0 || len(a.Components) != 1 {
+		t.Fatalf("answered fields or button: %+v %+v", e.Fields, a.Components)
+	}
+	// With a comment there's no button.
+	a = answeredMessage(es, g, id, "Ana", "buena semana\ny tanto")
+	if e := a.Embeds[0]; !strings.HasSuffix(e.Description, "\n> buena semana\n> y tanto") || len(a.Components) != 0 {
+		t.Fatalf("commented: %q %+v", e.Description, a.Components)
+	}
+}
+
 func TestWorkingDaysText(t *testing.T) {
 	en, es := i18n.Get("en"), i18n.Get("es")
 	for _, c := range []struct {
@@ -231,25 +264,39 @@ func TestSurveyMessage(t *testing.T) {
 	g := api.Guild{DiscordID: "1", Name: "Equipo", Anonymous: true}
 	ana := surveyRecipient{ID: "2", Name: "Ana", Streak: 5}
 
-	// No custom message: the default text in the guild's language.
-	def := surveyMessage(es, g, "2026-10-23", ana)
-	if def.Content != es.T("survey.question", "guild", "Equipo")+"\n"+es.T("survey.anonymous") {
-		t.Fatalf("default: %q", def.Content)
+	// No custom message: a greeting and the question in the guild's language, on a card with
+	// the server and the privacy notice.
+	def := surveyMessage(es, g, "2026-10-23", ana, "https://cdn/icon.png")
+	e := def.Embeds[0]
+	if e.Description != "### 👋 ¡Hola, Ana!\n¿Cómo te encuentras hoy?" || e.Author.Name != "Equipo · Encuesta diaria" {
+		t.Fatalf("default: %q %q", e.Description, e.Author.Name)
+	}
+	if e.Thumbnail == nil || e.Thumbnail.URL != "https://cdn/icon.png" || e.Footer.Text != "🔒 Respuesta anónima" || len(e.Fields) != 0 {
+		t.Fatalf("icon, notice or fields: %+v %+v %+v", e.Thumbnail, e.Footer, e.Fields)
+	}
+	// The mood buttons show just their emoji.
+	for _, c := range def.Components[0].(discordgo.ActionsRow).Components {
+		if btn := c.(discordgo.Button); btn.Label != "" || btn.Emoji == nil {
+			t.Fatalf("mood button: %+v", btn)
+		}
+	}
+	if e := surveyMessage(es, g, "2026-10-23", ana, "").Embeds[0]; e.Thumbnail != nil {
+		t.Fatalf("no icon: %+v", e.Thumbnail)
 	}
 
 	g.SurveyMessage = "Hola {{user.name}} ({{ user.mention }}), {{weekday}} — {{date}} en {{guild.name}}: {{user.streak}} días. {{user.nope}} @everyone"
-	msg := surveyMessage(es, g, "2026-10-23", ana)
-	want := "Hola Ana (<@2>), viernes — viernes, 23 de octubre en Equipo: 5 días. {{user.nope}} @everyone\n" + es.T("survey.anonymous")
-	if msg.Content != want {
-		t.Fatalf("custom:\n got %q\nwant %q", msg.Content, want)
+	msg := surveyMessage(es, g, "2026-10-23", ana, "")
+	want := "Hola Ana (<@2>), viernes — viernes, 23 de octubre en Equipo: 5 días. {{user.nope}} @everyone"
+	if got := msg.Embeds[0].Description; got != want {
+		t.Fatalf("custom:\n got %q\nwant %q", got, want)
 	}
 	// The service always adds the mood buttons and «Don't ask me again», and nothing pings.
 	if len(msg.Components) != 2 || msg.AllowedMentions == nil || len(msg.AllowedMentions.Parse) != 0 {
 		t.Fatalf("components or mentions: %+v %+v", msg.Components, msg.AllowedMentions)
 	}
 	g.Anonymous = false
-	if msg := surveyMessage(es, g, "2026-10-23", ana); !strings.HasSuffix(msg.Content, es.T("survey.named")) {
-		t.Fatalf("named notice: %q", msg.Content)
+	if msg := surveyMessage(es, g, "2026-10-23", ana, ""); msg.Embeds[0].Footer.Text != es.T("survey.named") {
+		t.Fatalf("named notice: %q", msg.Embeds[0].Footer.Text)
 	}
 
 	for code, want := range map[string]string{

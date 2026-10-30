@@ -67,7 +67,7 @@ func placeholders(s string) string {
 }
 
 func TestLookup(t *testing.T) {
-	if Get("es").T("survey.question", "guild", "Test") != "👋 ¿Cómo te encuentras hoy? (**Test**)" {
+	if Get("es").T("survey.title", "guild", "Test") != "Test · Encuesta diaria" {
 		t.Fatal("placeholder not filled")
 	}
 	if Get("xx").Code != Default || Get("pt-PT").Code != Default {

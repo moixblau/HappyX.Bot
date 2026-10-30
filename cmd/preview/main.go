@@ -37,6 +37,19 @@ var names = map[string]string{
 	bot.PreviewGeneralID: "general",
 }
 
+// images stands in for the sample avatars and server icon with a letter on a colour.
+var images = map[string]string{
+	bot.PreviewGuildIcon: placeholder("E", "#3b5bdb", 16),
+	bot.PreviewAvatarAna: placeholder("A", "#e8590c", 32),
+	bot.PreviewAvatarBea: placeholder("B", "#0ca678", 32),
+}
+
+func placeholder(letter, colour string, radius int) string {
+	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="%d" fill="%s"/>`+
+		`<text x="32" y="43" font-family="sans-serif" font-size="30" font-weight="700" fill="#fff" text-anchor="middle">%s</text></svg>`, radius, colour, letter)
+	return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(svg))
+}
+
 func main() {
 	lang := flag.String("lang", i18n.Default, "language code: "+strings.Join(i18n.Codes(), ", "))
 	out := flag.String("out", "preview.html", "file to write")
@@ -77,11 +90,24 @@ func writeMessage(b *strings.Builder, m *discordgo.MessageSend) {
 	}
 	for _, e := range m.Embeds {
 		fmt.Fprintf(b, "<div class=\"embed\" style=\"border-color:#%06x\">", e.Color)
+		if e.Thumbnail != nil {
+			fmt.Fprintf(b, "<img class=\"thumb\" alt=\"\" src=\"%s\">", images[e.Thumbnail.URL])
+		}
+		if e.Author != nil {
+			fmt.Fprintf(b, "<div class=\"eauthor\">%s</div>", html.EscapeString(e.Author.Name))
+		}
 		if e.Title != "" {
 			fmt.Fprintf(b, "<div class=\"etitle\">%s</div>", markdown(e.Title))
 		}
 		if e.Description != "" {
 			fmt.Fprintf(b, "<div class=\"edesc\">%s</div>", markdown(e.Description))
+		}
+		if len(e.Fields) > 0 {
+			b.WriteString(`<div class="efields">`)
+			for _, f := range e.Fields {
+				fmt.Fprintf(b, "<div><div class=\"fname\">%s</div>%s</div>", html.EscapeString(f.Name), markdown(f.Value))
+			}
+			b.WriteString("</div>")
 		}
 		if e.Image != nil {
 			fmt.Fprintf(b, "<img src=\"%s\">", files[e.Image.URL])
@@ -191,6 +217,8 @@ blockquote{margin:2px 0;padding:0 0 0 12px;border-left:4px solid #4e5058}
 .mention{background:rgba(88,101,242,.3);color:#c9cdfb;border-radius:3px;padding:0 2px;font-weight:500}
 code{background:#2b2d31;border-radius:4px;padding:0 3px;font-size:14px}
 .embed{background:#2b2d31;border-left:4px solid;border-radius:4px;padding:8px 16px 16px 12px;margin-top:4px;max-width:520px;font-size:14px}
+.embed{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px}.embed>*{grid-column:1}.embed img.thumb{grid-column:2;grid-row:1/span 6;width:80px;height:80px;margin:8px 0 0;border-radius:4px}
+.eauthor{font-size:14px;font-weight:600;color:#f2f3f5;margin:8px 0 4px}.efields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.fname{font-weight:600;color:#f2f3f5;margin-bottom:2px}
 .etitle{font-weight:700;color:#f2f3f5;font-size:16px;margin:4px 0 6px}.embed img{max-width:100%;border-radius:4px;margin-top:12px;display:block}.efoot{font-size:12px;color:#949ba4;margin-top:8px}
 .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.btn{border-radius:3px;padding:2px 16px;height:32px;display:inline-flex;align-items:center;font-size:14px;font-weight:500;color:#fff;background:#4e5058}.btn.primary{background:#5865f2}
 .ephemeral{font-size:12px;color:#949ba4;margin-top:4px}.ephemeral u{color:#00a8fc;text-decoration:none}
