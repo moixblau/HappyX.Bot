@@ -155,4 +155,4 @@ HappyX is developed with AI assistance. Every change is reviewed and approved by
 
 ## License
 
-[AGPL-3.0](LICENSE). The report fonts in `internal/report/fonts` keep their own licence ([OFL](internal/report/fonts/OFL.txt)). Versions published before 30 October 2026 (up to commit [`0590eb0`](https://github.com/happyx-app/HappyX.Bot/tree/0590eb03bbccc4bb3326b6940b5a15bba510b143)) remain available under the MIT License.
+[AGPL-3.0](LICENSE). The report fonts in `internal/report/fonts` keep their own licence ([OFL](internal/report/fonts/OFL.txt)). Versions published before 30 October 2026 (up to commit [`4102634`](https://github.com/happyx-app/HappyX.Bot/tree/410263403f30fbdef67da2117a568129d30f84db)) remain available under the MIT License.
