@@ -149,6 +149,10 @@ HAPPYX_API_URL=http://localhost:8083 HAPPYX_API_KEY=... go test ./internal/api/
 
 To run everything, use the `docker-compose.yml` in [HappyX](https://github.com/happyx-app/HappyX).
 
+## How it's built
+
+HappyX is developed with AI assistance. Every change is reviewed and approved by the maintainer before it's merged.
+
 ## License
 
-[MIT](LICENSE). The report fonts in `internal/report/fonts` keep their own licence ([OFL](internal/report/fonts/OFL.txt)).
+[AGPL-3.0](LICENSE). The report fonts in `internal/report/fonts` keep their own licence ([OFL](internal/report/fonts/OFL.txt)). Versions published before 30 October 2026 (up to commit [`4102634`](https://github.com/happyx-app/HappyX.Bot/tree/410263403f30fbdef67da2117a568129d30f84db)) remain available under the MIT License.
