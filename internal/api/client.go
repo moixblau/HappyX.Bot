@@ -330,6 +330,11 @@ func (c *Client) FinishDispatch(ctx context.Context, guildID, kind, period strin
 		map[string]int{"recipients": recipients, "failed": failed}, nil)
 }
 
+// ReleaseDispatch gives back a claimed send that reached nobody, so a later claim can retry it.
+func (c *Client) ReleaseDispatch(ctx context.Context, guildID, kind, period string) error {
+	return c.do(ctx, http.MethodDelete, "/v1/guilds/"+url.PathEscape(guildID)+"/dispatches/"+url.PathEscape(kind)+"/"+url.PathEscape(period), nil, nil)
+}
+
 // Report returns the report for [from, to]; empty strings mean the last complete period.
 func (c *Client) Report(ctx context.Context, guildID, from, to string) (Report, error) {
 	path := "/v1/guilds/" + url.PathEscape(guildID) + "/report"

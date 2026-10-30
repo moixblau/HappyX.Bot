@@ -64,7 +64,8 @@ report. One bot serves any number of servers; their data is kept apart by
   enough answers to guess): until Sunday each member can propose next week's question, and on
   Monday the API draws one of them. With no proposals, questions rotate weekly from `game.q.*` in
   the locales. Turned on mid-week, the game starts that same week until Wednesday.
-- The API records each survey and report it has sent, so restarts never send twice.
+- The API records each survey and report it has sent, so restarts never send twice. A send
+  that reached nobody (the API or Discord failed) is tried again 5 minutes later, up to 3 tries.
 - Surveys are **anonymous by default**: the admin sees aggregated results and comments, not who wrote them.
 - **Languages**: each server has a language (English by default, set with `/happyx config language`).
   Surveys, answers and reports use it. Slash command names and replies follow each user's Discord

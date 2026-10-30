@@ -27,6 +27,9 @@ type Bot struct {
 	// webURL is the dashboard's address, e.g. https://happyx.example.com, for links to the
 	// game. Empty when the dashboard isn't deployed.
 	webURL string
+	// skip holds, per guild, kind and period, until when the scheduler won't ask the API to
+	// claim it again: sent or claimed elsewhere, or waiting to retry. Only tick uses it.
+	skip map[string]time.Time
 
 	commandID atomic.Pointer[string] // /happyx's ID once registered, for clickable mentions
 }
@@ -39,7 +42,7 @@ func New(token string, client *api.Client, log *slog.Logger) (*Bot, error) {
 	// GuildMembers is a privileged intent: enable "Server Members Intent" in the
 	// Discord developer portal.
 	dg.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMembers | discordgo.IntentsDirectMessages
-	b := &Bot{dg: dg, api: client, log: log, now: time.Now}
+	b := &Bot{dg: dg, api: client, log: log, now: time.Now, skip: map[string]time.Time{}}
 	dg.AddHandler(b.onReady)
 	dg.AddHandler(b.onGuildCreate)
 	dg.AddHandler(b.onGuildDelete)
@@ -276,6 +279,11 @@ func (b *Bot) tick(ctx context.Context) {
 		return
 	}
 	now := b.now()
+	for k, until := range b.skip {
+		if !now.Before(until) {
+			delete(b.skip, k)
+		}
+	}
 	for _, g := range guilds {
 		st := schedule.Settings{Timezone: g.Timezone, SurveyHour: g.SurveyHour, ReportFrequency: g.ReportFrequency, WorkingDays: g.WorkingDays}
 		if day, due := schedule.SurveyDue(st, now); due {
@@ -299,14 +307,30 @@ func (b *Bot) tick(ctx context.Context) {
 // delivery counts the DMs of one send: who it went to and how many failed.
 type delivery struct{ recipients, failed int }
 
+const (
+	// skipDone is how long the scheduler stops claiming a period that is already sent. The
+	// longest a send stays due is four days (the game's guessing DM); one claim after that
+	// gets a 409 and skips it again.
+	skipDone = 24 * time.Hour
+	// retryAfter is the wait before trying again a send that reached nobody.
+	retryAfter = 5 * time.Minute
+)
+
 // dispatch runs send only if the API confirms nobody sent it yet for this period, then tells
-// the API how many people it went to and how many DMs failed, for the admin dashboard.
+// the API how many people it went to and how many DMs failed, for the admin dashboard. A send
+// that failed before reaching anybody gives its claim back, so it is tried again a few times.
 func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, send func() (delivery, error)) {
+	key := g.DiscordID + "/" + kind + "/" + period
+	now := b.now()
+	if now.Before(b.skip[key]) {
+		return
+	}
 	claimed, err := b.api.ClaimDispatch(ctx, g.DiscordID, kind, period)
 	if err != nil {
 		b.log.Error("claim dispatch", "guild", g.DiscordID, "kind", kind, "err", err)
 		return
 	}
+	b.skip[key] = now.Add(skipDone)
 	if !claimed {
 		return
 	}
@@ -318,6 +342,13 @@ func (b *Bot) dispatch(ctx context.Context, g api.Guild, kind, period string, se
 	}
 	if err != nil {
 		b.log.Error("dispatch", "guild", g.DiscordID, "kind", kind, "period", period, "err", err)
+		if d.recipients == d.failed { // nobody got it, so trying again can't send it twice
+			if err := b.api.ReleaseDispatch(ctx, g.DiscordID, kind, period); err != nil {
+				b.log.Warn("release dispatch", "guild", g.DiscordID, "kind", kind, "period", period, "err", err)
+				return
+			}
+			b.skip[key] = now.Add(retryAfter)
+		}
 		return
 	}
 	b.log.Info("dispatched", "guild", g.DiscordID, "kind", kind, "period", period, "recipients", d.recipients, "failed", d.failed)
