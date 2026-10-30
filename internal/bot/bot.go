@@ -49,6 +49,9 @@ func New(token string, client *api.Client, log *slog.Logger) (*Bot, error) {
 	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleCreate) { b.syncRoles(context.Background(), e.GuildID) })
 	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleUpdate) { b.syncRoles(context.Background(), e.GuildID) })
 	dg.AddHandler(func(s *discordgo.Session, e *discordgo.GuildRoleDelete) { b.syncRoles(context.Background(), e.GuildID) })
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.ChannelCreate) { b.onChannelChange(e.GuildID) })
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.ChannelUpdate) { b.onChannelChange(e.GuildID) })
+	dg.AddHandler(func(s *discordgo.Session, e *discordgo.ChannelDelete) { b.onChannelChange(e.GuildID) })
 	dg.AddHandler(b.onInteraction)
 	return b, nil
 }
@@ -109,6 +112,7 @@ func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
 		return
 	}
 	b.sendRoles(ctx, e.ID, e.Roles)
+	b.syncChannels(ctx, e.ID)
 	n, err := b.syncMembers(ctx, e.ID)
 	if err != nil {
 		b.log.Error("sync members", "guild", e.ID, "err", err)
@@ -125,6 +129,15 @@ func (b *Bot) syncRoles(ctx context.Context, guildID string) {
 		return
 	}
 	b.sendRoles(ctx, guildID, g.Roles)
+	b.syncChannels(ctx, guildID) // a role's permissions decide where the bot may post
+}
+
+// onChannelChange resends the server's channels when one is created, edited or deleted. DMs
+// have no guild and are skipped.
+func (b *Bot) onChannelChange(guildID string) {
+	if guildID != "" {
+		b.syncChannels(context.Background(), guildID)
+	}
 }
 
 // sendRoles gives the API the roles the dashboard can grant access to. @everyone (the guild's
@@ -249,6 +262,10 @@ func (b *Bot) onMemberAdd(s *discordgo.Session, e *discordgo.GuildMemberAdd) {
 // onMemberUpdate keeps a member's roles and username current, so access given to a role on the
 // dashboard follows who has it.
 func (b *Bot) onMemberUpdate(s *discordgo.Session, e *discordgo.GuildMemberUpdate) {
+	if e.Member != nil && e.User != nil && s.State.User != nil && e.User.ID == s.State.User.ID {
+		b.syncChannels(context.Background(), e.GuildID) // the bot's own roles changed where it may post
+		return
+	}
 	if e.Member == nil || e.User == nil || e.User.Bot {
 		return
 	}
